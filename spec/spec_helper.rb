@@ -140,6 +140,7 @@ RSpec.configure do |config| # rubocop:disable Metrics/BlockLength
         # under test that does *not* share a database connection with the
         # specs, so use truncation strategy.
         DatabaseCleaner.strategy = :truncation, { reset_ids: true, cache_tables: true }
+        visit 'about:blank'
       end
     end
 
