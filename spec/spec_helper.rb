@@ -46,7 +46,7 @@ require 'rspec/rails'
 require 'capybara/rspec'
 require 'pundit/rspec'
 require 'webmock/rspec'
-require 'factory_girl_rails'
+require 'factory_bot_rails'
 require 'database_cleaner'
 require 'fileutils'
 require 'active_support/testing/time_helpers'
@@ -95,7 +95,7 @@ RSpec.configure do |config| # rubocop:disable Metrics/BlockLength
     config.filter_run_excluding migration_spec: true
   end
   config.infer_spec_type_from_file_location!
-  config.include FactoryGirl::Syntax::Methods
+  config.include FactoryBot::Syntax::Methods
   config.include ActiveSupport::Testing::TimeHelpers
 
   if ENV['MIGRATION_SPEC']
@@ -148,7 +148,7 @@ RSpec.configure do |config| # rubocop:disable Metrics/BlockLength
       DatabaseCleaner.start
     end
 
-    config.after(:each) do
+    config.append_after(:each) do
       DatabaseCleaner.clean
     end
   end
@@ -159,6 +159,7 @@ require 'selenium-webdriver'
 Selenium::WebDriver::Chrome.path = ENV['CHROMIUM_BIN'] || %w[
   /usr/bin/chromium-browser
   /Applications/Chromium.app/Contents/MacOS/Chromium
+  /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome
 ].find { |path| File.executable?(path) }
 Selenium::WebDriver::Chrome.driver_path = ENV['CHROMEDRIVER_PATH'] || %w[
   /usr/bin/chromedriver

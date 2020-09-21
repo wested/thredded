@@ -13,7 +13,7 @@ addons:
 # For now, download chromedriver directly:
 before_script:
   - >
-      wget -q https://chromedriver.storage.googleapis.com/2.31/chromedriver_linux64.zip &&
+      wget -q https://chromedriver.storage.googleapis.com/2.33/chromedriver_linux64.zip &&
       unzip chromedriver_linux64.zip
 
 cache:
@@ -30,6 +30,7 @@ gemfile:
   - spec/gemfiles/rails_4_2.gemfile
   - spec/gemfiles/rails_5_0.gemfile
   - spec/gemfiles/rails_5_1.gemfile
+  - spec/gemfiles/rails_5_2.gemfile
 
 env:
   matrix:
@@ -44,7 +45,8 @@ env:
 
 # Avoid rake here, as the RSpec test task spawns a new process which does not run via bundler.
 script:
-- bundle exec rspec --force-color --format d
+- bundle exec rspec --force-color --format d --tag=~js
+- bundle exec rspec --force-color --format d --tag=js
 - bundle exec rubocop
 - bundle exec codeclimate-test-reporter
 - MIGRATION_SPEC=1 bundle exec rspec spec/migration --force-color --format d

@@ -172,3 +172,15 @@
     display: none;
   }
 }
+
+.thredded--topic-locked {
+  .thredded--topics--posts-count {
+    color: $thredded-badge-locked-color;
+    background-color: $thredded-badge-locked-background;
+  }
+}
+
+.thredded--topic--locked-notice {
+  @extend %thredded--alert;
+  @extend %thredded--alert--warning;
+}

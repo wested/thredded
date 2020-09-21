@@ -19,13 +19,15 @@ Thredded.user_name_column = :name
 # The path (or URL) you will use to link to your users' profiles.
 # When linking to a user, Thredded will use this lambda to spit out
 # the path or url to your user. This lambda is evaluated in the view context.
+# If the lambda returns nil, a span element is returned instead of a link; so
+# setting this to always return nil effectively disables all user links.
 Thredded.user_path = lambda do |user|
-  user_path = :"#{Thredded.user_class_name.underscore}_path"
+  user_path = :"#{Thredded.user_class_name.demodulize.underscore}_path"
   main_app.respond_to?(user_path) ? main_app.send(user_path, user) : "/users/#{user.to_param}"
 end
 
 # This method is used by Thredded controllers and views to fetch the currently signed-in user
-Thredded.current_user_method = :"current_#{Thredded.user_class_name.underscore}"
+Thredded.current_user_method = :"current_#{Thredded.user_class_name.demodulize.underscore}"
 
 # User avatar URL. rb-gravatar gem is used by default:
 Thredded.avatar_url = ->(user) { Gravatar.src(user.email, 156, 'mm') }

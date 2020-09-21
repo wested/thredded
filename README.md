@@ -98,7 +98,7 @@ Then, see the rest of this Readme for more information about using and customizi
 Add the gem to your Gemfile:
 
 ```ruby
-gem 'thredded', '~> 0.13.4'
+gem 'thredded', '~> 0.14.1'
 ```
 
 Add the Thredded [initializer] to your parent app by running the install generator.
@@ -380,8 +380,8 @@ change_column_default :thredded_user_preferences, :auto_follow_topics, 1
 
 ## I18n
 
-Thredded is mostly internationalized. It is currently available in English, Brazilian Portuguese, Polish, Russian,
-French, and Spanish.
+Thredded is mostly internationalized. It is currently available in English, Brazilian Portuguese, Chinese (Simplified),
+German, Polish, Italian, Russian, French, and Spanish.
 We welcome PRs adding support for new languages.
 
 Here are the steps to ensure the best support for your language if it isn't English:
@@ -433,19 +433,11 @@ The methods used by Thredded for determining the permissions are described below
 
 #### Posting to messageboards
 
-1. A list of messageboards that a given user can post in.
+A list of messageboards that a given user can post in.
 
   ```ruby
   # @return [ActiveRecord::Relation<Thredded::Messageboard>] messageboards that the user can post in
   thredded_can_write_messageboards
-  ```
-
-2. A list of users that can post to a given list of messageboards.
-
-  ```ruby
-  # @param messageboards [Array<Thredded::Messageboard>]
-  # @return [ActiveRecord::Relation<User>] users that can post to the given messageboards
-  self.thredded_messageboards_writers(messageboards)
   ```
 
 #### Messaging other users (posting to private topics)
@@ -459,18 +451,11 @@ thredded_can_message_users
 
 #### Moderating messageboards
 
-1. A list of messageboards that a given user can moderate:
+A list of messageboards that a given user can moderate:
 
   ```ruby
   # @return [ActiveRecord::Relation<Thredded::Messageboard>] messageboards that the user can moderate
   thredded_can_moderate_messageboards
-  ```
-2. A list of users that can moderate a given list of messageboards:
-
-  ```ruby
-  # @param messageboards [Array<Thredded::Messageboard>]
-  # @return [ActiveRecord::Relation<User>] users that can moderate the given messageboards
-  self.thredded_messageboards_moderators(messageboards)
   ```
 
 #### Admin permissions

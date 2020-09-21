@@ -28,7 +28,7 @@ ru:
           email_sent_reason_html: 'Это письмо было отправлено вам, потому что вы подписаны на тему: «<a href="%{post_url}">%{topic_title}</a>».'
           post_lead_html: '%{user} в <a href="%{post_url}">«%{topic_title}»</a>:'
           unsubscribe_instructions_html: Чтобы отписаться от этих писем, обновите свои <a href="%{preferences_url}">настройки</a>.
-        subject: Новое сообщение в «%{topic_title}» от %{user}
+        subject: Новое сообщение в «%{topic_title}»
         text:
           email_sent_reason: |-
             Это письмо было отправлено вам, потому что вы подписаны на тему «%{topic_title}».
@@ -54,6 +54,8 @@ ru:
       form:
         create_btn_submitting: :thredded.form.create_btn_submitting
         description_label: Описание
+        locked_label: Заблокировать
+        locked_notice: Этот форум заблокирован. Только модераторы могут создавать новые темы здесь.
         messageboard_group_id_label: Выбрать группу
         no_group: Не группировать
         title_label: Название форума
@@ -64,6 +66,14 @@ ru:
       topics_and_posts_counts: "%{topics_count} тем / %{posts_count} постов"
       update: :thredded.form.update
       updated_notice: Форум обновлен
+    messageboard_first_topic:
+      content: |-
+        There's not a whole lot here for now.
+
+        These forums are powered by [Thredded](https://github.com/thredded/thredded) v%{thredded_version}.
+        You can contact the Thredded team via the [Thredded chat room](https://gitter.im/thredded/thredded).
+        Please let us know that you are using Thredded by tweeting [@thredded](https://twitter.com/thredded)!
+      title: Welcome to your messageboard's very first thread
     messageboard_group:
       create: Создать группу форумов
       form:
@@ -72,6 +82,8 @@ ru:
     moderation:
       approve_btn: Одобрить
       block_btn: Заблокировать
+      moderation_state:
+        name: Состояние модерации
       pending:
         empty:
           content: Все посты промодерированы.
@@ -86,6 +98,8 @@ ru:
         form_placeholder: :thredded.moderation.search_users.form_label
         no_results_message: Не найдено пользователей %{query}
         results_message: Пользователи, начинающиеся с ... %{query}
+      user:
+        name: Пользователь
     nav:
       all_messageboards: Все форумы
       edit_messageboard: Редактировать форум
@@ -152,6 +166,7 @@ ru:
         create_btn_submitting: Посылаю...
         update_btn_submitting: :thredded.form.update_btn_submitting
     private_topics:
+      create: :thredded.private_topics.form.create_btn
       edit: Редактировать
       errors:
         user_ids_length: Выберите хотя-бы одного пользователя.
@@ -178,6 +193,7 @@ ru:
         placeholder: Поиск тем или записей
     time_ago: "%{time} назад"
     topics:
+      create: :thredded.topics.form.create_btn
       delete_confirm: Вы уверены что хотите удалить эту тему? Это безвозвратно.
       delete_topic: Удалить тему
       deleted_notice: Тема "удалена"
@@ -202,6 +218,7 @@ ru:
         update_btn: Обновление темы
       locked:
         label: Заблокировать тему
+        message: Эта тема закрыта модератором.
       mark_as_unread: Пометить как непрочитанное
       not_following: не отслеживаю
       search:

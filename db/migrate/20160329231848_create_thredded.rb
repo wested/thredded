@@ -44,6 +44,7 @@ class CreateThredded < Thredded::BaseMigration
       t.references :last_topic, index: false
       t.references :messageboard_group, index: false
       t.timestamps null: false
+      t.boolean :locked, null: false, default: false
       t.index [:messageboard_group_id], name: :index_thredded_messageboards_on_messageboard_group_id
       t.index [:slug], name: :index_thredded_messageboards_on_slug
     end
@@ -140,7 +141,7 @@ class CreateThredded < Thredded::BaseMigration
               order: { moderation_state_changed_at: :desc },
               name: :index_thredded_user_details_for_moderations
       t.index %i[latest_activity_at], name: :index_thredded_user_details_on_latest_activity_at
-      t.index %i[user_id], name: :index_thredded_user_details_on_user_id
+      t.index %i[user_id], name: :index_thredded_user_details_on_user_id, unique: true
     end
 
     create_table :thredded_messageboard_users do |t|
@@ -162,7 +163,7 @@ class CreateThredded < Thredded::BaseMigration
       t.boolean :follow_topics_on_mention, default: true, null: false
       t.boolean :auto_follow_topics, default: false, null: false
       t.timestamps null: false
-      t.index [:user_id], name: :index_thredded_user_preferences_on_user_id
+      t.index [:user_id], name: :index_thredded_user_preferences_on_user_id, unique: true
     end
 
     create_table :thredded_user_messageboard_preferences do |t|

@@ -1,4 +1,94 @@
-# Master
+# v0.14.1
+
+## Added
+
+* Italian localization. 🇮🇹
+  [#669](https://github.com/thredded/thredded/pull/669)
+* Allow disabling user links.
+  [#673](https://github.com/thredded/thredded/pull/673)
+* Allow customizing first messageboard post.
+  [#670](https://github.com/thredded/thredded/pull/670)
+
+## Fixed
+
+* A minor JavaScript error on the topic edit form.
+  [#be45f262](https://github.com/thredded/thredded/commit/be45f2627ca37c76165d33fad0118a87139f291b)
+
+See the full list of changes here: https://github.com/thredded/thredded/compare/v0.14.0...v0.14.1.
+
+# v0.14.0
+
+## Added
+
+* Messageboard locking. By default, only moderators can create new topics in locked messageboards.
+  Posting to the existing topics is not affected.
+  [#635](https://github.com/thredded/thredded/pull/635)
+
+* German localization. 🇩🇪
+  [#666](https://github.com/thredded/thredded/pull/666)
+
+## Fixed
+
+* `thredded_user_details` and `thredded_user_preferences` now use unique `user_id` indices.
+  [#609](https://github.com/thredded/thredded/pull/609)
+* Mention completion now works in IE11.
+  [yuku-t/textcomplete#125](https://github.com/yuku-t/textcomplete/pull/125)
+
+
+**NB:** If updating to this version from 0.13.x, you must copy and run the upgrade migration after updating the gem:
+
+```console
+cp "$(bundle show thredded)"/db/upgrade_migrations/20170811090735_upgrade_thredded_v0_13_to_v_014.rb db/migrate
+rake db:migrate
+```
+
+See the full list of changes here: https://github.com/thredded/thredded/compare/v0.13.8...v0.14.0.
+
+# v0.13.8
+
+## Fixed
+
+* Made @-mention dropdown work properly with usernames with no spaces.
+  [#645](https://github.com/thredded/thredded/pull/645)
+* Other @-mention dropdown improvements (update to latest textcomplete)
+
+See the full list of changes here: https://github.com/thredded/thredded/compare/v0.13.7...v0.13.8.
+
+# v0.13.7
+
+## Added
+
+* Simplified Chinese localization. 🇨🇳
+  [#632](https://github.com/thredded/thredded/pull/632)
+
+# v0.13.6
+
+## Fixed
+
+* Private posts can be edited again.
+
+## Added
+
+* Locked topics have a different badge color in the topics list.
+  Locked topics also display a message saying that they are locked.
+  [#629](https://github.com/thredded/thredded/pull/629)
+
+# v0.13.5
+
+## Fixed
+
+* timeago.js with locales that contain a hyphen (e.g. `zh-CN`).
+  [#626](https://github.com/thredded/thredded/issues/626)
+
+## Changed
+
+* Post notification email subject no longer contains the post's author name.
+  Notification emails for the same topic now stay in the same thread in the email client.
+  [#90c6f5ff](https://github.com/thredded/thredded/commit/90c6f5fffd42ec1001c39dceb5ab5e875a71869d)
+
+See the full list of changes here: https://github.com/thredded/thredded/compare/v0.13.4...v0.13.5.
+
+# v0.13.4
 
 ## Added
 

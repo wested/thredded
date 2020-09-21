@@ -28,7 +28,7 @@ fr:
           email_sent_reason_html: 'Ce courriel vous a été envoyé car vous suivez ce sujet: "<a href="%{post_url}">%{topic_title}</a>".'
           post_lead_html: '%{user} a <a href="%{post_url}">déclaré dans "%{topic_title}"</a>:'
           unsubscribe_instructions_html: Pour vous désabonner de ces courriels, mettez à jour vos <a href="%{preferences_url}">préférences</a>.
-        subject: Une nouvelle publication dans "%{topic_title}" par %{user}
+        subject: Une nouvelle publication dans "%{topic_title}"
         text:
           email_sent_reason: |-
             Ce courriel vous a été envoyé parce que vous suivez
@@ -55,6 +55,8 @@ fr:
       form:
         create_btn_submitting: :thredded.form.create_btn_submitting
         description_label: Description
+        locked_label: Verrouillé
+        locked_notice: Ce message est verrouillé. Seuls les modérateurs peuvent créer de nouveaux sujets ici.
         messageboard_group_id_label: Groupe de la catégorie
         no_group: Pas de groupe
         title_label: Nom
@@ -65,6 +67,14 @@ fr:
       topics_and_posts_counts: "%{topics_count} sujets / %{posts_count} commentaires"
       update: :thredded.form.update
       updated_notice: La catégorie a été mise à jour
+    messageboard_first_topic:
+      content: |-
+        There's not a whole lot here for now.
+
+        These forums are powered by [Thredded](https://github.com/thredded/thredded) v%{thredded_version}.
+        You can contact the Thredded team via the [Thredded chat room](https://gitter.im/thredded/thredded).
+        Please let us know that you are using Thredded by tweeting [@thredded](https://twitter.com/thredded)!
+      title: Welcome to your messageboard's very first thread
     messageboard_group:
       create: Créer un nouveau groupe de catégorie
       form:
@@ -73,6 +83,8 @@ fr:
     moderation:
       approve_btn: Approuver
       block_btn: Bloqué
+      moderation_state:
+        name: État de modération
       pending:
         empty:
           content: Tous les commentaires ont été modérés.
@@ -88,6 +100,8 @@ fr:
         form_placeholder: :thredded.moderation.search_users.form_label
         no_results_message: Aucun utilisateur avec un nom commençant par %{query}
         results_message: Utilisateurs avec le nom commençant par %{query}
+      user:
+        name: Utilisateur
     nav:
       all_messageboards: Toutes les catégories
       edit_messageboard: Éditer la catégorie
@@ -155,6 +169,7 @@ fr:
         create_btn_submitting: Message en cours d'envoi...
         update_btn_submitting: :thredded.form.update_btn_submitting
     private_topics:
+      create: :thredded.private_topics.form.create_btn
       edit: Éditer
       errors:
         user_ids_length: Spécifier au moins un autre utilisateur.
@@ -181,6 +196,7 @@ fr:
         placeholder: Rechercher un Sujet ou un Commentaire
     time_ago: il y a %{time}
     topics:
+      create: :thredded.topics.form.create_btn
       delete_confirm: Êtes-vous sur de vouloir supprimer ce sujet ? Cette action est irréversible.
       delete_topic: Supprimer le Sujet
       deleted_notice: Sujet supprimé
@@ -205,6 +221,7 @@ fr:
         update_btn: Mettre à jour le Sujet
       locked:
         label: Verrouillé
+        message: Ce sujet a été verrouillé par un modérateur.
       mark_as_unread: Marquer comme non lu à partir d'ici
       not_following: Vous ne suivez pas ce sujet.
       search:

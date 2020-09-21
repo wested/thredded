@@ -4,7 +4,7 @@ require 'faker'
 I18n.reload!
 include ActionDispatch::TestProcess
 
-FactoryGirl.define do
+FactoryBot.define do
   sequence(:topic_hash) { |n| "hash#{n}" }
 
   factory :email, class: OpenStruct do
@@ -139,7 +139,7 @@ FactoryGirl.define do
 
   factory :user, aliases: %i[email_confirmed_user last_user], class: ::User do
     sequence(:email) { |n| "user#{n}@example.com" }
-    name { Faker::Name.name }
+    name { [true, false].sample ? Faker::Name.name : Faker::Name.first_name }
 
     trait :admin do
       admin true
