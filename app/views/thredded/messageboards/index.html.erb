@@ -2,17 +2,25 @@
 <% content_for :thredded_page_id, 'thredded--messageboards-index' %>
 <% content_for :thredded_breadcrumbs, render('thredded/shared/breadcrumbs') %>
 <%= thredded_page do %>
+  <%= define_svg_icons('thredded/follow.svg', 'thredded/lock.svg') %>
   <%= view_hooks.messageboards_index.container.render self, groups: @groups do %>
     <section class="thredded--main-section thredded--messageboards">
       <%= view_hooks.messageboards_index.list.render self, groups: @groups do %>
         <% @groups.each do |group| %>
           <% if group.name.present? %>
-            <h3 class="thredded--messageboards-group--title"><%= group.name %></h3>
+            <h3 class="thredded--messageboards-group--title">
+              <%= link_to_if Thredded.show_messageboard_group_page,
+                            group.name,
+                            show_messageboard_group_path(group.id),
+                            class: 'thredded--link' %>
+            </h3>
           <% end %>
           <div class="thredded--messageboards-group">
             <%= view_hooks.messageboards_index.group.render self, group: group do %>
-              <%= render group.messageboards %>
+              <%= render partial: 'thredded/messageboards/messageboard',
+                         collection: group.messageboards %>
             <% end %>
+            <%= render partial: 'thredded/messageboards/grid_sizers' %>
           </div>
         <% end %>
       <% end %>

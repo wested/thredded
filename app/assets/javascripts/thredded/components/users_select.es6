@@ -1,3 +1,4 @@
+//= require thredded/core/thredded
 //= require thredded/core/on_page_load
 //= require thredded/components/user_textcomplete
 //= require thredded/dependencies/autosize
@@ -44,7 +45,7 @@
           current.push(char);
       }
     }
-    if (current.length) result.push({name: current.join(''), index: currentIndex});
+    if (current.length) result.current = {name: current.join(''), index: currentIndex};
     return result;
   }
 
@@ -63,6 +64,9 @@
         maxCount: Thredded.UsersSelect.DROPDOWN_MAX_COUNT,
       },
     });
+    textarea.addEventListener('blur', (evt) => {
+      textcomplete.hide();
+    });
 
     const searchFn = Thredded.UserTextcomplete.searchFn({
       url: textarea.getAttribute('data-autocomplete-url'),
@@ -77,8 +81,8 @@
       index: 0,
       match: (text) => {
         const names = parseNames(text);
-        if (names.length) {
-          const {name, index} = names[names.length - 1];
+        if (names.current) {
+          const {name, index} = names.current;
           const matchData = [name];
           matchData.index = index;
           return matchData;

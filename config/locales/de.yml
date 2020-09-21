@@ -5,7 +5,7 @@ de:
       content_blocked_notice: Blockiert
       content_blocked_notice_with_record_html: Blockiert von %{moderator} %{time_ago}
     email_notifier:
-      by_email: Per E-mail
+      by_email: Per E-Mail
     emails:
       message_notification:
         html:
@@ -44,8 +44,11 @@ de:
     errors:
       login_required: Bitte zuerst anmelden
       not_authorized: Du hast keinen Zugriff auf diese Seite
+      post_not_found: Dieser Beitrag existiert nicht.
+      private_post_not_found: Diese private Nachricht existiert nicht.
       private_topic_create_denied: Du bist nicht autorisiert, private Unterhaltungen zu erstellen
       private_topic_not_found: Diese private Unterhaltung existiert nicht
+      topic_not_found: Dieses Thema existiert nicht.
     form:
       create_btn_submitting: Erstellen...
       preview: Vorschau
@@ -53,8 +56,13 @@ de:
       update_btn_submitting: Änderungen übernehmen...
     messageboard:
       create: Erstelle ein neues Forum
+      deleted_notice: Messageboard gelöscht
       form:
         create_btn_submitting: :thredded.form.create_btn_submitting
+        delete: Messageboard löschen
+        delete_confirm: >-
+          Dadurch werden das Messageboard %{messageboard_name} und alle zugehörigen Posts entfernt. Sie können es
+          nicht wiederherstellen. Möchten Sie das wirklich tun?
         description_label: Beschreibung
         locked_label: Geschlossen
         locked_notice: Dieses Forum ist geschlossen. Nur Moderatoren können hier neue Beiträge erstellen.
@@ -66,6 +74,7 @@ de:
         page_title: Forum
       last_updated_by_html: Letzter Beitrag %{time_ago} <cite>von %{user}</cite>
       topics_and_posts_counts: "%{topics_count} Diskussionen / %{posts_count} Beiträge"
+      topics_and_unread_topics_counts: "%{unread_topics_count} ungelesen von %{topics_count} Themen"
       update: :thredded.form.update
       updated_notice: Das Forum wurde aktualisiert
     messageboard_first_topic:
@@ -81,6 +90,8 @@ de:
       form:
         create_btn_submitting: :thredded.form.create_btn_submitting
       saved: Die Gruppe %{name} wurde erstellt
+      show:
+        page_title: 'Messageboard-Gruppe: %{name}'
     moderation:
       approve_btn: Erlauben
       block_btn: Blockieren
@@ -117,9 +128,10 @@ de:
       moderation_users: Nutzer
       private_topics: Private Unterhaltungen
       settings: Benachrichtigungseinstellungen
+      unread_topics: Ungelesen
     null_user_name: Gelöschte Nutzer
     posts:
-      delete: Beitrag gelöscht
+      delete: Beitrag löschen
       delete_confirm: Bist du sicher, dass du diesen Beitrag löschen willst?
       deleted_notice: Dein Beitrag wurde gelöscht
       edit: :thredded.nav.edit_post
@@ -132,6 +144,8 @@ de:
         update_btn_submitting: :thredded.form.update_btn_submitting
       pending_moderation_notice: Dein Beitrag wird veröffentlicht, sobald ein Moderator ihn angeschaut hat.
       quote_btn: Zitat
+      spoiler_summary: Spoiler - klicken um zu zeigen.
+      spoiler_summary_for_email: 'Spoiler - Wählen Sie den Inhalt unten, um zu sehen:'
     preferences:
       edit:
         page_title: :thredded.nav.settings
@@ -165,7 +179,7 @@ de:
     private_posts:
       form:
         content_label: Nachricht
-        create_btn: Nchricht senden
+        create_btn: Nachricht senden
         create_btn_submitting: Senden...
         update_btn_submitting: :thredded.form.update_btn_submitting
     private_topics:
@@ -205,7 +219,7 @@ de:
       edit: Diskussion bearbeiten
       follow: Folge dieser Diskussion
       followed_by: 'gefolgt von:'
-      followed_by_noone: Die Diskussion wird von Niemandem verfolgt
+      followed_by_noone: Die Diskussion wird von niemandem verfolgt
       followed_notice: Du folgst der Diskussion
       following:
         auto: Du folgst dieser Diskussion, da automatisches Folgen aktiviert ist
@@ -221,6 +235,7 @@ de:
         title_placeholder: :thredded.topics.form.title_label
         title_placeholder_start: Starte eine neue Diskussion
         update_btn: Beitrag bearbeiten
+      in_messageboard_html: in %{messageboard_link}
       locked:
         label: Gesperrt
         message: Der Beitrag wurde von einem Moderator gesperrt
@@ -237,20 +252,27 @@ de:
       started_by_html: Gestartet %{time_ago} von %{user}
       sticky:
         label: Angepinnt
-      unfollow: Nich mehr folgen
+      unfollow: Nicht mehr folgen
       unfollowed_notice: Du folgst der Diskussion nicht mehr
       updated_notice: Beitrag aktualisiert
+    unread_topics:
+      empty:
+        content: Du hast alles gelesen, was es gibt. Komm später wieder für mehr!
+        title: Alles gelesen!
+      page_title: Ungelesene Themen
+      page_title_in_messageboard: "%{messageboard}: Ungelesene Themen"
     users:
-      currently_online: Zurzeit Online
+      currently_online: Zurzeit online
       last_active_html: Zuletzt aktiv %{time_ago}
       posted_in_topic_html: Hochgeladen in %{topic_link}
       posts_count:
-        one: Einmalig hochgeladen
-        other: "%{count} -mal hochgeladen"
+        one: "%{count}-mal hochgeladen"
+        other: "%{count}-mal hochgeladen"
       recent_activity: :thredded.recent_activity
+      send_private_message: Private Nachricht senden
       started_topic_html: "%{topic_link} gestartet"
       started_topics_count:
-        one: Eine Diskussion gestartet
+        one: "%{count} Diskussion gestartet"
         other: "%{count} Diskussionen gestartet"
       user_posted_in_topic_html: "%{user_link} hochgeladen in %{topic_link}"
       user_since_html: Nutzer seit %{time_ago}

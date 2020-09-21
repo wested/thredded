@@ -1,5 +1,6 @@
 @import "base";
 
+@import "utilities/flex";
 @import "utilities/is-compact";
 @import "utilities/is-expanded";
 
@@ -7,6 +8,7 @@
 @import "layout/main-navigation";
 @import "layout/search-navigation";
 @import "layout/user-navigation";
+@import "layout/scoped-navigation";
 @import "layout/navigation";
 @import "layout/moderation";
 @import "layout/user";
@@ -24,6 +26,7 @@
 @import "components/messageboard";
 @import "components/pagination";
 @import "components/post";
+@import "components/spoiler";
 @import "components/post-form";
 @import "components/preferences";
 @import "components/topic-delete";

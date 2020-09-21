@@ -10,7 +10,8 @@ module Thredded
                inverse_of: :thredded_posts,
                **(Thredded.rails_gte_51? ? { optional: true } : {})
     belongs_to :messageboard,
-               counter_cache: true
+               counter_cache: true,
+               inverse_of: :posts
     belongs_to :postable,
                class_name:    'Thredded::Topic',
                inverse_of:    :posts,
@@ -27,7 +28,8 @@ module Thredded
     has_many :user_notifications,
              class_name: 'Thredded::UserPostNotification',
              dependent: :destroy
-    has_one :last_moderation_record, -> { order_newest_first },
+    has_one :last_moderation_record, # rubocop:disable Rails/InverseOf
+            -> { order_newest_first },
             class_name: 'Thredded::PostModerationRecord'
 
     validates :messageboard_id, presence: true
@@ -35,7 +37,17 @@ module Thredded
     after_commit :update_parent_last_user_and_time_from_last_post, on: %i[create destroy]
     after_commit :update_parent_last_user_and_time_from_last_post_if_moderation_state_changed, on: :update
 
+    after_commit :update_unread_posts_count_if_moderation_state_changed, on: :update
+
     after_commit :auto_follow_and_notify, on: %i[create update]
+
+    # Finds the post by its ID, or raises {Thredded::Errors::PostNotFound}.
+    # @param id [String, Number]
+    # @return [Thredded::Post]
+    # @raise [Thredded::Errors::PostNotFound] if the post with the given ID does not exist.
+    def self.find!(id)
+      find_by(id: id) || fail(Thredded::Errors::PostNotFound)
+    end
 
     # @param [Integer] per_page
     # @param [Thredded.user_class] user
@@ -72,6 +84,10 @@ module Thredded
 
     def update_parent_last_user_and_time_from_last_post_if_moderation_state_changed
       update_parent_last_user_and_time_from_last_post if previous_changes.include?('moderation_state')
+    end
+
+    def update_unread_posts_count_if_moderation_state_changed
+      update_unread_posts_count if previous_changes.include?('moderation_state')
     end
   end
 end

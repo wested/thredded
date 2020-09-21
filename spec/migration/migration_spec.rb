@@ -4,34 +4,31 @@ require 'spec_helper'
 Rails.env = 'test'
 # To run the migration tests, run:
 # MIGRATION_SPEC=1 rspec spec/migration/migration_spec.rb
-describe 'Migrations', migration_spec: true, order: :defined do
+RSpec.describe 'Migrations', migration_spec: true, order: :defined do # rubocop:disable RSpec/DescribeClass
   def migrate(migration_file)
-    verbose_was = ActiveRecord::Migration.verbose
-    ActiveRecord::Migration.verbose = false
-    Thredded::DbTools.silence_active_record do
-      ActiveRecord::Migrator.migrate('db/upgrade_migrations') do |m|
-        m.filename >= 'db/upgrade_migrations/20161113161801_upgrade_v0_8_to_v0_9.rb' && m.filename <= migration_file
-      end
+    Thredded::DbTools.migrate paths: 'db/upgrade_migrations', quiet: true do |m|
+      m.filename >= 'db/upgrade_migrations/20161113161801_upgrade_v0_8_to_v0_9.rb' && m.filename <= migration_file
     end
-  ensure
-    ActiveRecord::Migration.verbose = verbose_was
   end
 
-  if Rails.gem_version >= Gem::Version.new('5.2.0.beta2')
+  if Rails.gem_version >= Gem::Version.new('5.2.0.rc2')
     # create a record bypassing ActiveRecord
     # @return [Integer] record id
     def insert_record(klass, attributes)
-      klass._insert_record(values_for_insert(klass, attributes))
+      klass._insert_record(values_for_insert(attributes))
+    end
+  elsif Rails.gem_version >= Gem::Version.new('5.2.0.beta2')
+    def insert_record(klass, attributes)
+      klass._insert_record(values_for_insert(attributes).transform_keys { |column| klass.arel_table[column] })
     end
   else
     def insert_record(klass, attributes)
-      klass.unscoped.insert(values_for_insert(klass, attributes))
+      klass.unscoped.insert(values_for_insert(attributes).transform_keys { |column| klass.arel_table[column] })
     end
   end
 
-  def values_for_insert(klass, attributes)
+  def values_for_insert(attributes)
     attributes.reverse_merge(created_at: Time.zone.now, updated_at: Time.zone.now)
-      .each_with_object({}) { |(k, v), h| h[klass.arel_table[k]] = v }
   end
 
   context 'v0.8 to v0.9' do
@@ -117,7 +114,23 @@ describe 'Migrations', migration_spec: true, order: :defined do
   end
 
   context 'v0.13 to v0.14' do
-    let(:migration_file) { 'db/upgrade_migrations/20170420163138_upgrade_thredded_v0_13_to_v0_14.rb' }
+    let(:migration_file) { 'db/upgrade_migrations/20170811090735_upgrade_thredded_v0_13_to_v0_14.rb' }
+
+    it 'smoke test' do
+      migrate(migration_file)
+    end
+  end
+
+  context 'v0.14 to v0.15' do
+    let(:migration_file) { 'db/upgrade_migrations/20180110200009_upgrade_thredded_v0_14_to_v0_15.rb' }
+
+    it 'smoke test' do
+      migrate(migration_file)
+    end
+  end
+
+  context 'v0.15 to v0.16' do
+    let(:migration_file) { 'db/upgrade_migrations/20180930063614_upgrade_thredded_v0_15_to_v0_16.rb' }
 
     it 'smoke test' do
       migrate(migration_file)

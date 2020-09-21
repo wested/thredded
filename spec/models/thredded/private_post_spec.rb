@@ -11,7 +11,7 @@ module Thredded
 
     it 'notifies members on create' do
       private_post = build(:private_post, postable: private_topic, user: jane)
-      notifier = double(NotifyPrivateTopicUsers)
+      notifier = instance_double(NotifyPrivateTopicUsers)
       expect(NotifyPrivateTopicUsers).to receive(:new).with(private_post).and_return(notifier)
       expect(notifier).to receive(:run)
       private_post.save!
@@ -19,29 +19,34 @@ module Thredded
   end
 
   describe PrivatePost, '#page' do
+    subject(:post_page) { private_post.page(per_page: 1) }
+
     let(:private_topic) { create(:private_topic, user: sally, users: [jane]) }
     let(:sally) { create(:user) }
     let(:jane) { create(:user) }
-    subject { private_post.page(per_page: 1) }
+
     let(:private_post) { create(:private_post, postable: private_topic, id: 100) }
+
     it 'for sole private_post' do
-      expect(subject).to eq(1)
+      expect(post_page).to eq(1)
     end
     it 'for two private_posts' do
       travel_to 1.hour.ago do
         create(:private_post, postable: private_topic, id: 99)
       end
-      expect(subject).to eq(2)
+      expect(post_page).to eq(2)
     end
     describe 'with different per_page' do
-      subject { private_post.page(per_page: 2) }
+      subject(:post_page) { private_post.page(per_page: 2) }
+
       it 'respects per' do
         travel_to 1.hour.ago do
           create(:private_post, postable: private_topic, id: 99)
         end
-        expect(subject).to eq(1)
+        expect(post_page).to eq(1)
       end
     end
+
     it 'with previous posts with disordered ids' do
       travel_to 2.hours.ago do
         create(:private_post, postable: private_topic, id: 101)
@@ -49,7 +54,7 @@ module Thredded
       travel_to 1.hour.ago do
         create(:private_post, postable: private_topic, id: 99)
       end
-      expect(subject).to eq(3)
+      expect(post_page).to eq(3)
     end
   end
 
@@ -82,7 +87,7 @@ module Thredded
     context 'when first post' do
       it 'removes the read state' do
         expect do
-          first_post.mark_as_unread(user, page)
+          first_post.mark_as_unread(user)
         end.to change { private_topic.reload.user_read_states.count }.by(-1)
       end
     end
@@ -90,21 +95,22 @@ module Thredded
     context 'when third (say) post' do
       it 'changes the read state to the previous post' do
         expect do
-          third_post.mark_as_unread(user, page)
+          third_post.mark_as_unread(user)
         end.to change { read_state.reload.read_at }.to eq second_post.created_at
       end
     end
 
     context 'when none are read (no ReadState at all)' do
       let(:read_state) { nil }
+
       it 'marking first post as unread does nothing' do
         expect do
-          first_post.mark_as_unread(user, page)
-        end.to_not change { private_topic.reload.user_read_states.count }
+          first_post.mark_as_unread(user)
+        end.not_to change { private_topic.reload.user_read_states.count }
       end
       it 'marking third post as unread creates read state' do
         expect do
-          third_post.mark_as_unread(user, page)
+          third_post.mark_as_unread(user)
         end.to change { private_topic.reload.user_read_states.count }
       end
     end
@@ -119,7 +125,7 @@ module Thredded
 
       it 'marking the third post as unread changes read state to second post' do
         expect do
-          third_post.mark_as_unread(user, page)
+          third_post.mark_as_unread(user)
         end.to change { read_state.reload.read_at }.to eq second_post.created_at
       end
     end

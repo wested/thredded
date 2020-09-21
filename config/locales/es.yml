@@ -45,8 +45,11 @@ es:
     errors:
       login_required: Por favor, inicia sesión.
       not_authorized: No estás autorizado para ver esta página.
+      post_not_found: Esta publicación no existe.
+      private_post_not_found: Este mensaje privado no existe.
       private_topic_create_denied: No estás autorizado para crear temas privados.
       private_topic_not_found: Este tema privado no existe.
+      topic_not_found: Este tema no existe.
     form:
       create_btn_submitting: Creando...
       preview: Vista previa
@@ -54,8 +57,13 @@ es:
       update_btn_submitting: Actualizando...
     messageboard:
       create: Crear un nuevo foro
+      deleted_notice: Tablero de mensajes eliminado
       form:
         create_btn_submitting: :thredded.form.create_btn_submitting
+        delete: Eliminar tablero de mensajes
+        delete_confirm: >-
+          Esto eliminará el tablero de mensajes %{messageboard_name} y todas sus publicaciones. No podrás recuperarlo.
+          ¿Seguro que quieres hacer esto?
         description_label: Descripción
         locked_label: Bloqueado
         locked_notice: Este mensaje está bloqueado. Solo los moderadores pueden crear nuevos temas aquí.
@@ -67,6 +75,7 @@ es:
         page_title: Foros
       last_updated_by_html: Actualizado %{time_ago} <cite>por %{user}</cite>
       topics_and_posts_counts: "%{topics_count} temas / %{posts_count} mensajes"
+      topics_and_unread_topics_counts: "%{unread_topics_count} no leídos de los temas de %{topics_count}"
       update: :thredded.form.update
       updated_notice: Foro actualizado
     messageboard_first_topic:
@@ -82,6 +91,8 @@ es:
       form:
         create_btn_submitting: :thredded.form.create_btn_submitting
       saved: Sección %{name} creada
+      show:
+        page_title: 'Grupo de tablero de mensajes: %{name}'
     moderation:
       approve_btn: Aprobar
       block_btn: Rechazar
@@ -118,6 +129,7 @@ es:
       moderation_users: Usuarios
       private_topics: Mensajes Privados
       settings: Ajuste de Notificaciones
+      unread_topics: No leído
     null_user_name: Usuario eliminado
     posts:
       delete: Eliminar Mensaje
@@ -133,6 +145,8 @@ es:
         update_btn_submitting: :thredded.form.update_btn_submitting
       pending_moderation_notice: Tu post será publicado cuando haya sido revisado por un moderador.
       quote_btn: Citar
+      spoiler_summary: 'Spoiler: haz clic para mostrar.'
+      spoiler_summary_for_email: 'Spoiler: selecciona el contenido a continuación para ver:'
     preferences:
       edit:
         page_title: :thredded.nav.settings
@@ -222,6 +236,7 @@ es:
         title_placeholder: :thredded.topics.form.title_label
         title_placeholder_start: Crear un Nuevo Tema
         update_btn: Actualizar Tema
+      in_messageboard_html: en %{messageboard_link}
       locked:
         label: Bloqueado
         message: Este tema ha sido bloqueado por un moderador.
@@ -240,17 +255,24 @@ es:
       unfollow: Deja de seguir
       unfollowed_notice: Has dejado de seguir este tema
       updated_notice: Tema actualizado
+    unread_topics:
+      empty:
+        content: Has leído todo lo que hay. ¡Vuelve más tarde para más!
+        title: "¡Todo leido!"
+      page_title: Temas no leídos
+      page_title_in_messageboard: "%{messageboard}: temas no leídos"
     users:
       currently_online: En línea
       last_active_html: Última vez activo hace %{time_ago}
       posted_in_topic_html: Escribió en %{topic_link}
       posts_count:
-        one: Ha escrito una vez
+        one: Ha escrito %{count} vez
         other: Ha escrito %{count} veces
       recent_activity: :thredded.recent_activity
+      send_private_message: Enviar mensaje privado
       started_topic_html: Empezó %{topic_link}
       started_topics_count:
-        one: Ha empezado un tema
+        one: Ha empezado %{count} tema
         other: Ha empezado %{count} temas
       user_posted_in_topic_html: "%{user_link} escribió en %{topic_link}"
       user_since_html: Usuario desde %{time_ago}

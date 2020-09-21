@@ -7,11 +7,10 @@ module Thredded
 
     def new_private_topic_params
       params
-        .require(:private_topic)
+        .fetch(:private_topic, {})
         .permit(:title, :content, :user_names, user_ids: [])
         .merge(
           user: thredded_current_user,
-          ip: request.remote_ip
         ).tap { |p| adapt_user_ids! p }
     end
 

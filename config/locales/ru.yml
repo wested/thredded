@@ -42,8 +42,11 @@ ru:
     errors:
       login_required: Необходимо зайти на форум.
       not_authorized: Вы не авторизованы.
+      post_not_found: Это сообщение не существует.
+      private_post_not_found: Это личное сообщение не существует.
       private_topic_create_denied: Вы не авторизованы для создания личных сообщений.
       private_topic_not_found: Личное сообщение не найдено.
+      topic_not_found: Эта тема не существует.
     form:
       create_btn_submitting: Создаю...
       preview: Обзор
@@ -51,8 +54,13 @@ ru:
       update_btn_submitting: Обновляю...
     messageboard:
       create: Создать форум
+      deleted_notice: Доска объявлений удалена
       form:
         create_btn_submitting: :thredded.form.create_btn_submitting
+        delete: Удалить доску объявлений
+        delete_confirm: >-
+          Это удалит доску сообщений %{messageboard_name} и все ее сообщения. Вы не сможете его восстановить. Вы
+          уверены, что хотите это сделать?
         description_label: Описание
         locked_label: Заблокировать
         locked_notice: Этот форум заблокирован. Только модераторы могут создавать новые темы здесь.
@@ -64,6 +72,7 @@ ru:
         page_title: Форумы
       last_updated_by_html: Обновлено %{time_ago} <cite>пользователем %{user}</cite>
       topics_and_posts_counts: "%{topics_count} тем / %{posts_count} постов"
+      topics_and_unread_topics_counts: "%{unread_topics_count} непрочитанных из %{topics_count} тем"
       update: :thredded.form.update
       updated_notice: Форум обновлен
     messageboard_first_topic:
@@ -79,6 +88,8 @@ ru:
       form:
         create_btn_submitting: :thredded.form.create_btn_submitting
       saved: Группа форумов %{name} создана
+      show:
+        page_title: 'Группа досок объявлений: %{name}'
     moderation:
       approve_btn: Одобрить
       block_btn: Заблокировать
@@ -114,6 +125,7 @@ ru:
       moderation_users: Пользователи
       private_topics: Личное
       settings: Настройки
+      unread_topics: Непрочитанные
     null_user_name: Пользователь удален
     posts:
       delete: Удалить пост
@@ -129,6 +141,8 @@ ru:
         update_btn_submitting: :thredded.form.update_btn_submitting
       pending_moderation_notice: Ваш пост будет опубликован, когда будет одобрен модератором.
       quote_btn: Цитировать
+      spoiler_summary: Спойлер - нажмите, чтобы показать.
+      spoiler_summary_for_email: 'Спойлер - выделите содержимое ниже, чтобы увидеть:'
     preferences:
       edit:
         page_title: :thredded.nav.settings
@@ -216,6 +230,7 @@ ru:
         title_placeholder: :thredded.topics.form.title_label
         title_placeholder_start: Начать новую тему
         update_btn: Обновление темы
+      in_messageboard_html: в %{messageboard_link}
       locked:
         label: Заблокировать тему
         message: Эта тема закрыта модератором.
@@ -234,22 +249,29 @@ ru:
       unfollow: Не следить за темой
       unfollowed_notice: Вы не следите за темой
       updated_notice: Тема обновлена
+    unread_topics:
+      empty:
+        content: Вы все прочитали. Вернитесь позже и может будет еще что-нибудь!
+        title: Все прочитано!
+      page_title: Непрочитанные темы
+      page_title_in_messageboard: "%{messageboard}: непрочитанные темы"
     users:
       currently_online: Онлайн
       last_active_html: Последняя активность %{time_ago}
-      posted_in_topic_html: Сделан пост в %{topic_link}
+      posted_in_topic_html: Написал в %{topic_link}
       posts_count:
         few: Сделано %{count} поста
         many: Сделано %{count} постов
         one: Сделан %{count} пост
         other: Сделано %{count} постов
       recent_activity: :thredded.recent_activity
+      send_private_message: Отправить личное сообщение
       started_topic_html: Начато %{topic_link}
       started_topics_count:
         few: Начато %{count} темы
         many: Начато %{count} тем
         one: Начата %{count} тема
         other: Начато %{count} тем
-      user_posted_in_topic_html: "%{user_link} сделал запись в %{topic_link}"
+      user_posted_in_topic_html: "%{user_link} написал в %{topic_link}"
       user_since_html: Пользователь был %{time_ago}
       user_started_topic_html: "%{user_link} начал %{topic_link}"

@@ -8,14 +8,13 @@ module Thredded
     before_action :thredded_require_login!
 
     def index
-      @private_topics = Thredded::PrivateTopicsPageView.new(
-        thredded_current_user,
-        Thredded::PrivateTopic
-          .distinct
-          .for_user(thredded_current_user)
-          .order_recently_posted_first
-          .page(params[:page])
-      )
+      page_scope = Thredded::PrivateTopic
+        .distinct
+        .for_user(thredded_current_user)
+        .order_recently_posted_first
+        .send(Kaminari.config.page_method_name, params[:page])
+      return redirect_to(last_page_params(page_scope)) if page_beyond_last?(page_scope)
+      @private_topics = Thredded::PrivateTopicsPageView.new(thredded_current_user, page_scope)
 
       Thredded::PrivateTopicForm.new(user: thredded_current_user).tap do |form|
         @new_private_topic = form if policy(form.private_topic).create?
@@ -30,22 +29,17 @@ module Thredded
         .posts
         .includes(:user)
         .order_oldest_first
-        .page(current_page)
+        .send(Kaminari.config.page_method_name, current_page)
+      return redirect_to(last_page_params(page_scope)) if page_beyond_last?(page_scope)
       @posts = Thredded::TopicPostsPageView.new(thredded_current_user, private_topic, page_scope)
-
-      if thredded_signed_in?
-        Thredded::UserPrivateTopicReadState.touch!(
-          thredded_current_user.id, private_topic.id, page_scope.last, current_page
-        )
-      end
-
+      Thredded::UserPrivateTopicReadState.touch!(thredded_current_user.id, page_scope.last) if thredded_signed_in?
       @new_post = Thredded::PrivatePostForm.new(
         user: thredded_current_user, topic: private_topic, post_params: new_private_post_params
       )
     end
 
     def new
-      @private_topic = Thredded::PrivateTopicForm.new(user: thredded_current_user)
+      @private_topic = Thredded::PrivateTopicForm.new(new_private_topic_params)
       authorize_creating @private_topic.private_topic
     end
 

@@ -40,8 +40,11 @@ zh-CN:
     errors:
       login_required: 请先登录
       not_authorized: 你没有权限访问该页面
+      post_not_found: 这篇文章不存在。
+      private_post_not_found: 此私人消息不存在。
       private_topic_create_denied: 你没有权限创建私人对话
       private_topic_not_found: 该私人对话不存在
+      topic_not_found: 此主题不存在。
     form:
       create_btn_submitting: 创建中...
       preview: 预览
@@ -49,8 +52,11 @@ zh-CN:
       update_btn_submitting: 更新中...
     messageboard:
       create: 创建一个新板块
+      deleted_notice: 留言板已删除
       form:
         create_btn_submitting: :thredded.form.create_btn_submitting
+        delete: 删除留言板
+        delete_confirm: 这将删除留言板%{messageboard_name}及其所有帖子。你将无法恢复它。你确定你要这么做吗？
         description_label: 描述
         locked_label: 锁定
         locked_notice: 这个消息板被锁定。只有版主可以在这里创建新的主题。
@@ -62,6 +68,7 @@ zh-CN:
         page_title: 板块
       last_updated_by_html: 最近由 <span>%{user}</span> 在%{time_ago}更新
       topics_and_posts_counts: "%{topics_count} 帖子 / %{posts_count} 回复"
+      topics_and_unread_topics_counts: "%{unread_topics_count} 未读取 %{topics_count} 主题"
       update: :thredded.form.update
       updated_notice: 板块已更新
     messageboard_first_topic:
@@ -77,6 +84,8 @@ zh-CN:
       form:
         create_btn_submitting: :thredded.form.create_btn_submitting
       saved: 板块分组 %{name} 已创建
+      show:
+        page_title: 留言板组：%{name}
     moderation:
       approve_btn: 通过
       block_btn: 锁定
@@ -111,6 +120,7 @@ zh-CN:
       moderation_users: 用户
       private_topics: 私人对话
       settings: 通知设置
+      unread_topics: 未读
     null_user_name: 删除用户
     posts:
       delete: 删除回复
@@ -126,6 +136,8 @@ zh-CN:
         update_btn_submitting: :thredded.form.update_btn_submitting
       pending_moderation_notice: 你的回复将在审核之后公开发表
       quote_btn: 引用
+      spoiler_summary: 剧透 - 点击显示。
+      spoiler_summary_for_email: 扰流板 - 选择下面的内容来查看：
     preferences:
       edit:
         page_title: :thredded.nav.settings
@@ -211,6 +223,7 @@ zh-CN:
         title_placeholder: :thredded.topics.form.title_label
         title_placeholder_start: 发布新帖子
         update_btn: 更新帖子
+      in_messageboard_html: 在%{messageboard_link}
       locked:
         label: 锁定
         message: 该帖子被某个审核者锁定
@@ -229,17 +242,24 @@ zh-CN:
       unfollow: 取消关注
       unfollowed_notice: 你不再关注该帖子
       updated_notice: 帖子已更新
+    unread_topics:
+      empty:
+        content: 你已经读完了。稍后再回来获取更多！
+        title: 全部阅读！
+      page_title: 未读主题
+      page_title_in_messageboard: "%{messageboard}：未读主题"
     users:
       currently_online: 目前在线
       last_active_html: 最后活跃%{time_ago}
       posted_in_topic_html: 在%{topic_link}中回复到：
       posts_count:
-        one: 一个回复
+        one: "%{count} 个回复"
         other: "%{count} 个回复"
       recent_activity: :thredded.recent_activity
+      send_private_message: 发送私人讯息
       started_topic_html: 发布帖子 %{topic_link}
       started_topics_count:
-        one: 发布一个帖子
+        one: 发布 %{count} 个帖子
         other: 发布 %{count} 个帖子
       user_posted_in_topic_html: "%{user_link} 回复在 %{topic_link}"
       user_since_html: 用户自%{time_ago}

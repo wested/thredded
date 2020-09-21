@@ -19,7 +19,6 @@ Thredded::Engine.routes.draw do # rubocop:disable Metrics/BlockLength
         resource :preview, only: [:update], controller: 'private_post_previews'
         member do
           get 'quote'
-          post 'mark_as_unread'
         end
       end
     end
@@ -52,9 +51,16 @@ Thredded::Engine.routes.draw do # rubocop:disable Metrics/BlockLength
     end
   end
 
+  resources :topics, path: '', only: [] do
+    collection do
+      get '/unread', action: :unread, as: :unread
+    end
+  end
+
   resource :preferences, only: %i[edit update], as: :global_preferences
   resource :messageboard, path: 'messageboards', only: [:new]
-  resources :messageboards, only: %i[edit update]
+  get '/messageboard-groups/:id', action: :show, controller: 'messageboard_groups', as: :show_messageboard_group
+  resources :messageboards, only: %i[edit update destroy]
   resources :messageboards, only: %i[index create], path: '' do
     resource :preferences, only: %i[edit update]
     resource :topic, path: 'topics', only: [:new] do
@@ -64,6 +70,7 @@ Thredded::Engine.routes.draw do # rubocop:disable Metrics/BlockLength
       collection do
         get '(page-:page)', action: :index, as: '', constraints: page_constraint
         get '/category/:category_id', action: :category, as: :categories
+        get '/unread', action: :unread, as: :unread
       end
       member do
         get '(page-:page)', action: :show, as: '', constraints: page_constraint
@@ -77,8 +84,24 @@ Thredded::Engine.routes.draw do # rubocop:disable Metrics/BlockLength
         resource :preview, only: [:update], controller: 'post_previews'
         member do
           get 'quote'
-          post 'mark_as_unread'
         end
+      end
+    end
+  end
+
+  scope path: 'action' do
+    # flat urls under here for anything which is non-visible to users & search engines (typically json actions)
+    resources :posts, only: %i[] do
+      member do
+        post 'mark_as_read'
+        post 'mark_as_unread'
+      end
+    end
+
+    resources :private_posts, only: %i[] do
+      member do
+        post 'mark_as_read'
+        post 'mark_as_unread'
       end
     end
   end

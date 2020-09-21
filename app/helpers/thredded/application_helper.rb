@@ -5,6 +5,7 @@ module Thredded
     include ::Thredded::UrlsHelper
     include ::Thredded::NavHelper
     include ::Thredded::RenderHelper
+    include ::Thredded::IconHelper
 
     # @return [AllViewHooks] View hooks configuration.
     def view_hooks
@@ -20,9 +21,20 @@ module Thredded
     end
 
     def thredded_container_classes
-      ['thredded--main-container', content_for(:thredded_page_id)].tap do |classes|
-        classes << 'thredded--is-moderator' unless moderatable_messageboards_ids.empty?
-      end
+      [
+        'thredded--main-container',
+        content_for(:thredded_page_id),
+        "thredded--global-nav-icons-#{global_nav_icons_count}",
+        ('thredded--is-moderator' if thredded_moderator?),
+        ('thredded--private-messaging-enabled' if Thredded.private_messaging_enabled),
+      ].compact
+    end
+
+    def global_nav_icons_count
+      result = 1 # Notification Settings
+      result += 1 if Thredded.private_messaging_enabled
+      result += 1 if thredded_moderator?
+      result
     end
 
     # Render the page container with the supplied block as content.
@@ -73,7 +85,8 @@ module Thredded
     # @param content_partial [String]
     def render_posts(posts, partial: 'thredded/posts/post', content_partial: 'thredded/posts/content', locals: {})
       posts_with_contents = render_collection_to_strings_with_cache(
-        partial: content_partial, collection: posts, as: :post, expires_in: 1.week
+        partial: content_partial, collection: posts, as: :post, expires_in: 1.week,
+        locals: { options: { users_provider: ::Thredded::UsersProviderWithCache.new } }
       )
       render partial: partial, collection: posts_with_contents, as: :post_and_content, locals: locals
     end
@@ -104,26 +117,15 @@ module Thredded
       end
     end
 
-    def unread_private_topics_count
-      @unread_private_topics_count ||=
-        if thredded_signed_in?
-          Thredded::PrivateTopic
-            .for_user(thredded_current_user)
-            .unread(thredded_current_user)
-            .count
-        else
-          0
-        end
-    end
-
-    def moderatable_messageboards_ids
-      @moderatable_messageboards_ids ||=
-        thredded_current_user.thredded_can_moderate_messageboards.pluck(:id)
-    end
-
     def posts_pending_moderation_count
-      @posts_pending_moderation_count ||=
-        Thredded::Post.where(messageboard_id: moderatable_messageboards_ids).pending_moderation.count
+      @posts_pending_moderation_count ||= begin
+        scope = Thredded::Post.pending_moderation
+        moderatable_messageboards = thredded_current_user.thredded_can_moderate_messageboards
+        unless moderatable_messageboards == Thredded::Messageboard.all
+          scope = scope.where(messageboard_id: moderatable_messageboards.pluck(:id))
+        end
+        scope.count
+      end
     end
   end
 end

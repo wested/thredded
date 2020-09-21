@@ -14,8 +14,15 @@ module Thredded
     scope :search_query, ->(query) { ::Thredded::TopicsSearch.new(query, self).search }
 
     scope :order_sticky_first, -> { order(sticky: :desc) }
+    scope :order_followed_first, ->(user) {
+      user_follows = UserTopicFollow.arel_table
+      joins(arel_table.join(user_follows, Arel::Nodes::OuterJoin)
+              .on(user_follows[:topic_id].eq(arel_table[:id])
+                  .and(user_follows[:user_id].eq(user.id))).join_sources)
+        .order(Arel::Nodes::Ascending.new(user_follows[:id].eq(nil)))
+    }
 
-    scope :followed_by, lambda { |user|
+    scope :followed_by, ->(user) {
       joins(:user_follows)
         .where(thredded_user_topic_follows: { user_id: user.id })
     }
@@ -25,7 +32,7 @@ module Thredded
     friendly_id :slug_candidates,
                 use: %i[history reserved],
                 # Avoid route conflicts
-                reserved_words: ::Thredded::FriendlyIdReservedWordsAndPagination.new(%w[topics])
+                reserved_words: ::Thredded::FriendlyIdReservedWordsAndPagination.new(%w[topics unread])
 
     belongs_to :user,
                class_name: Thredded.user_class_name,
@@ -51,20 +58,22 @@ module Thredded
              foreign_key: :postable_id,
              inverse_of:  :postable,
              dependent:   :destroy
-    has_one :first_post, -> { order_oldest_first },
-            class_name:  'Thredded::Post',
+    has_one :first_post, # rubocop:disable Rails/InverseOf
+            -> { order_oldest_first },
+            class_name: 'Thredded::Post',
             foreign_key: :postable_id
-    has_one :last_post, -> { order_newest_first },
-            class_name:  'Thredded::Post',
+    has_one :last_post, # rubocop:disable Rails/InverseOf
+            -> { order_newest_first },
+            class_name: 'Thredded::Post',
             foreign_key: :postable_id
 
-    has_many :topic_categories, dependent: :destroy
+    has_many :topic_categories, inverse_of: :topic, dependent: :delete_all
     has_many :categories, through: :topic_categories
     has_many :user_read_states,
              class_name: 'Thredded::UserTopicReadState',
              foreign_key: :postable_id,
              inverse_of: :postable,
-             dependent: :destroy
+             dependent: :delete_all
     has_many :user_follows,
              class_name: 'Thredded::UserTopicFollow',
              inverse_of: :topic,
@@ -106,15 +115,33 @@ module Thredded
 
       public
 
+      def post_class
+        Thredded::Post
+      end
+
       # @param user [Thredded.user_class]
       # @return [Array<[TopicCommon, UserTopicReadStateCommon, UserTopicFollow]>]
       def with_read_and_follow_states(user)
-        null_read_state = Thredded::NullUserTopicReadState.new
-        return current_scope.zip([null_read_state, nil]) if user.thredded_anonymous?
-        read_states_by_topic = read_states_by_postable_hash(user)
-        follows_by_topic = follows_by_topic_hash(user)
-        current_scope.map do |topic|
-          [topic, read_states_by_topic[topic] || null_read_state, follows_by_topic[topic]]
+        topics = current_scope.to_a
+        if user.thredded_anonymous?
+          post_counts = post_counts_for_user_and_topics(user, topics.map(&:id))
+          topics.map do |topic|
+            [topic, Thredded::NullUserTopicReadState.new(posts_count: post_counts[topic.id] || 0), nil]
+          end
+        else
+          read_states_by_topic = read_states_by_postable_hash(user)
+          post_counts = post_counts_for_user_and_topics(
+            user, topics.reject { |topic| read_states_by_topic.key?(topic) }.map(&:id)
+          )
+          follows_by_topic = follows_by_topic_hash(user)
+          current_scope.map do |topic|
+            [
+              topic,
+              read_states_by_topic[topic] ||
+                Thredded::NullUserTopicReadState.new(posts_count: post_counts[topic.id] || 0),
+              follows_by_topic[topic]
+            ]
+          end
         end
       end
     end
@@ -165,9 +192,10 @@ module Thredded
     end
 
     def handle_messageboard_change_after_commit
-      # Update the `posts.messageboard_id` column. The column is just a performance optimization,
+      # Update `messageboard_id` columns. These columns are a performance optimization,
       # so use update_all to avoid validitaing, triggering callbacks, and updating the timestamps:
       posts.update_all(messageboard_id: messageboard_id)
+      user_read_states.update_all(messageboard_id: messageboard_id)
 
       # Update the associated messageboard metadata that Rails does not update them automatically.
       previous_changes['messageboard_id'].each do |messageboard_id|

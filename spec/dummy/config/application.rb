@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require File.expand_path('../boot', __FILE__)
+require File.expand_path('boot', __dir__)
 
 require 'active_record/railtie'
 require 'action_controller/railtie'
@@ -12,10 +12,13 @@ require 'kaminari-i18n'
 require 'turbolinks'
 require 'rails_email_preview'
 require 'roadie-rails'
+require 'twemoji'
+require 'twemoji/svg'
 require 'thredded'
 require 'thredded/markdown_coderay'
 require 'thredded/markdown_katex'
 require 'rails-ujs' unless Thredded.rails_gte_51?
+require 'backport_new_renderer' if Rails::VERSION::MAJOR < 5
 
 if ENV['HEROKU']
   require 'tunemygc'
@@ -25,6 +28,8 @@ if ENV['HEROKU']
 end
 
 require 'web-console' if Rails.env.development?
+
+require 'webpacker' if Rails::VERSION::MAJOR >= 6 && ENV['THREDDED_TESTAPP_SPROCKETS_JS'] != '1'
 
 module Dummy
   class Application < Rails::Application
@@ -66,11 +71,9 @@ module Dummy
     # like if you have constraints or database-specific column types
     # config.active_record.schema_format = :sql
 
-    if Rails::VERSION::MAJOR < 5
-      config.active_record.raise_in_transactional_callbacks = true
-    end
+    config.active_record.raise_in_transactional_callbacks = true if Rails::VERSION::MAJOR < 5
 
-    if Rails.gem_version >= Gem::Version.new('5.2.0.beta2')
+    if Rails.gem_version >= Gem::Version.new('5.2.0.beta2') && Rails::VERSION::MAJOR < 6
       config.active_record.sqlite3.represent_boolean_as_integer = true
     end
 
@@ -79,5 +82,11 @@ module Dummy
 
     # Version of your assets, change this if you want to expire all your assets
     config.assets.version = '1.0'
+
+    config.load_defaults("#{Rails::VERSION::MAJOR}.#{Rails::VERSION::MINOR}") if config.respond_to?(:load_defaults)
+
+    def self.thredded_testapp_webpack?
+      Rails::VERSION::MAJOR >= 6 && ENV['THREDDED_TESTAPP_SPROCKETS_JS'] != '1'
+    end
   end
 end

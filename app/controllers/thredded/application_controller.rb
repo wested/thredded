@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Thredded
-  class ApplicationController < ::ApplicationController
+  class ApplicationController < ::ApplicationController # rubocop:disable Metrics/ClassLength
     layout :thredded_layout
     include ::Thredded::UrlsHelper
     include Pundit
@@ -12,12 +12,18 @@ module Thredded
       :thredded_current_user,
       :messageboard,
       :messageboard_or_nil,
+      :unread_private_topics_count,
+      :unread_followed_topics_count,
+      :unread_topics_count,
       :preferences,
-      :thredded_signed_in?
+      :thredded_signed_in?,
+      :thredded_moderator?
 
     rescue_from Thredded::Errors::MessageboardNotFound,
                 Thredded::Errors::PrivateTopicNotFound,
+                Thredded::Errors::PrivatePostNotFound,
                 Thredded::Errors::TopicNotFound,
+                Thredded::Errors::PostNotFound,
                 Thredded::Errors::UserNotFound do |exception|
       @error   = exception
       @message = exception.message
@@ -52,6 +58,11 @@ module Thredded
       !thredded_current_user.thredded_anonymous?
     end
 
+    def thredded_moderator?
+      return @is_thredded_moderator unless @is_thredded_moderator.nil?
+      @is_thredded_moderator = !thredded_current_user.thredded_can_moderate_messageboards.empty?
+    end
+
     if Rails::VERSION::MAJOR < 5
       # redirect_back polyfill
       def redirect_back(fallback_location:, **args)
@@ -65,6 +76,16 @@ module Thredded
     # @return [Boolean] whether the given params are a subset of the controller's {#params}.
     def params_match?(given = {})
       given.all? { |k, v| v == params[k] }
+    end
+
+    # Returns true if the current page is beyond the end of the collection
+    def page_beyond_last?(page_scope)
+      page_scope.to_a.empty? && page_scope.current_page != 1
+    end
+
+    # Returns URL parameters for the last page of the given page scope.
+    def last_page_params(page_scope)
+      { page: page_scope.total_pages }
     end
 
     private
@@ -114,6 +135,46 @@ module Thredded
       nil
     end
 
+    # @return [ActiveRecord::Relation]
+    def topics_scope
+      @topics_scope ||=
+        if messageboard_or_nil
+          policy_scope(messageboard.topics)
+        else
+          policy_scope(Thredded::Topic.all).joins(:messageboard).merge(policy_scope(Thredded::Messageboard.all))
+        end
+    end
+
+    def unread_private_topics_count
+      @unread_private_topics_count ||=
+        if thredded_signed_in?
+          Thredded::PrivateTopic
+            .for_user(thredded_current_user)
+            .unread(thredded_current_user)
+            .count
+        else
+          0
+        end
+    end
+
+    def unread_followed_topics_count
+      @unread_followed_topics_count ||=
+        if thredded_signed_in?
+          topics_scope.unread_followed_by(thredded_current_user).count
+        else
+          0
+        end
+    end
+
+    def unread_topics_count
+      @unread_topics_count ||=
+        if thredded_signed_in?
+          topics_scope.unread(thredded_current_user).count
+        else
+          0
+        end
+    end
+
     def preferences
       @preferences ||= thredded_current_user.thredded_user_preference
     end
@@ -130,6 +191,11 @@ module Thredded
 
     def thredded_require_login!
       fail Thredded::Errors::LoginRequired if thredded_current_user.thredded_anonymous?
+    end
+
+    def thredded_require_moderator!
+      return if thredded_moderator?
+      fail Pundit::NotAuthorizedError, 'You are not authorized to perform this action.'
     end
   end
 end

@@ -4,9 +4,9 @@ module Thredded
   module TopicCommon
     extend ActiveSupport::Concern
     included do
-      paginates_per 50 if respond_to?(:paginates_per)
+      paginates_per Thredded.topics_per_page if respond_to?(:paginates_per)
 
-      belongs_to :last_user,
+      belongs_to :last_user, # rubocop:disable Rails/InverseOf
                  class_name: Thredded.user_class_name,
                  foreign_key: 'last_user_id',
                  **(Thredded.rails_gte_51? ? { optional: true } : {})
@@ -14,8 +14,12 @@ module Thredded
       scope :order_recently_posted_first, -> { order(last_post_at: :desc, id: :desc) }
       scope :on_page, ->(page_num) { page(page_num) }
 
-      validates :hash_id, presence: true, uniqueness: true
+      validates :hash_id,
+                presence: true,
+                uniqueness: { case_sensitive: true }
       validates :posts_count, numericality: true
+
+      validates :title, presence: true, length: { within: Thredded.topic_title_length_range }
 
       before_validation do
         self.hash_id = SecureRandom.hex(10) if hash_id.nil?
@@ -48,12 +52,17 @@ module Thredded
       # @param user [Thredded.user_class]
       # @return [ActiveRecord::Relation]
       def unread(user)
-        topics      = arel_table
+        topics = arel_table
         reads_class = reflect_on_association(:user_read_states).klass
-        reads       = reads_class.arel_table
-        joins(topics.join(reads, Arel::Nodes::OuterJoin)
-                .on(topics[:id].eq(reads[:postable_id]).and(reads[:user_id].eq(user.id))).join_sources)
-          .merge(reads_class.where(reads[:id].eq(nil).or(reads[:read_at].lt(topics[:last_post_at]))))
+        reads = reads_class.arel_table
+
+        joins_reads =
+          topics.outer_join(reads)
+            .on(topics[:id].eq(reads[:postable_id]).and(reads[:user_id].eq(user.id))).join_sources
+
+        unread_scope = reads_class.where(reads[:id].eq(nil).or(reads[:unread_posts_count].not_eq(0)))
+
+        joins(joins_reads).merge(unread_scope)
       end
 
       private
@@ -63,20 +72,16 @@ module Thredded
       def read_states_by_postable_hash(user)
         read_states = reflect_on_association(:user_read_states).klass
           .where(user_id: user.id, postable_id: current_scope.map(&:id))
+          .with_page_info
         Thredded::TopicCommon::CachingHash.from_relation(read_states)
       end
 
-      public
-
-      # @param user [Thredded.user_class]
-      # @return [Array<[TopicCommon, UserTopicReadStateCommon]>]
-      def with_read_states(user)
-        null_read_state = Thredded::NullUserTopicReadState.new
-        return current_scope.zip([null_read_state]) if user.thredded_anonymous?
-        read_states_by_postable = read_states_by_postable_hash(user)
-        current_scope.map do |postable|
-          [postable, read_states_by_postable[postable] || null_read_state]
-        end
+      # @param [Thredded.user_class] user
+      # @param [Array<Number>] topic_ids
+      # @return [Hash{topic ID => posts count}] Counts of posts visible to the given user in the given topics.
+      def post_counts_for_user_and_topics(user, topic_ids)
+        return {} if topic_ids.empty?
+        Pundit.policy_scope!(user, post_class.all).where(postable_id: topic_ids).group(:postable_id).count
       end
     end
 

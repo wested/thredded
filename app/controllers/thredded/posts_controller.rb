@@ -7,6 +7,7 @@ module Thredded
     include Thredded::NewPostParams
 
     helper_method :topic
+    before_action :assign_messageboard_for_actions, only: %i[mark_as_read mark_as_unread]
     after_action :update_user_activity
 
     after_action :verify_authorized
@@ -53,11 +54,22 @@ module Thredded
                     notice: I18n.t('thredded.posts.deleted_notice')
     end
 
+    def mark_as_read
+      authorize post, :read?
+      UserTopicReadState.touch!(thredded_current_user.id, post)
+      respond_to do |format|
+        format.html { redirect_back fallback_location: post_path(post, user: thredded_current_user) }
+        format.json { render(json: { read: true }) }
+      end
+    end
+
     def mark_as_unread
       authorize post, :read?
-      page = post.page(user: thredded_current_user)
-      post.mark_as_unread(thredded_current_user, page)
-      after_mark_as_unread # customization hook
+      post.mark_as_unread(thredded_current_user)
+      respond_to do |format|
+        format.html { after_mark_as_unread } # customization hook
+        format.json { render(json: { read: false }) }
+      end
     end
 
     def quote
@@ -82,12 +94,15 @@ module Thredded
     def parent_topic
       Thredded::Topic
         .where(messageboard: messageboard)
-        .friendly
-        .find(params[:topic_id])
+        .friendly_find!(params[:topic_id])
+    end
+
+    def assign_messageboard_for_actions
+      @messageboard = post.postable.messageboard
     end
 
     def post
-      @post ||= Thredded::Post.find(params[:id])
+      @post ||= Thredded::Post.find!(params[:id])
     end
 
     def current_page

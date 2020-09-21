@@ -5,6 +5,7 @@ module Thredded
     include ActiveModel::Model
 
     delegate :id,
+             :title_was,
              to: :private_topic
 
     attr_accessor \
@@ -13,8 +14,7 @@ module Thredded
       :user_ids,
       :locked,
       :sticky,
-      :content,
-      :private_topic
+      :content
 
     attr_reader :user, :params
     attr_writer :user_names
@@ -44,8 +44,10 @@ module Thredded
       return false unless valid?
 
       ActiveRecord::Base.transaction do
+        new_topic = !private_topic.persisted?
         private_topic.save!
         post.save!
+        Thredded::UserPrivateTopicReadState.read_on_first_post!(user, post) if new_topic
       end
       true
     end
@@ -130,7 +132,7 @@ module Thredded
 
     def parse_names(text) # rubocop:disable Metrics/CyclomaticComplexity,Metrics/MethodLength
       result = []
-      current = String.new
+      current = +''
       in_name = in_quoted = false
       text.each_char do |char|
         case char

@@ -1,5 +1,6 @@
 //= require thredded/core/thredded
 //= require thredded/core/escape_html
+//= require thredded/dependencies/textcomplete
 
 (() => {
   const Thredded = window.Thredded;
@@ -7,10 +8,13 @@
   Thredded.UserTextcomplete = {
     DROPDOWN_CLASS_NAME: 'thredded--textcomplete-dropdown',
 
-    formatUser({avatar_url, name}) {
+    formatUser({avatar_url, name, display_name}) {
       return "<div class='thredded--textcomplete-user-result'>" +
         `<img class='thredded--textcomplete-user-result__avatar' src='${Thredded.escapeHtml(avatar_url)}' >` +
         `<span class='thredded--textcomplete-user-result__name'>${Thredded.escapeHtml(name)}</span>` +
+        (name !== display_name && display_name ?
+          `<span class='thredded--textcomplete-user-result__display_name'>${Thredded.escapeHtml(display_name)}</span>` :
+          '') +
         '</div>';
     },
 
@@ -29,8 +33,8 @@
             callback([]);
             return;
           }
-          callback(JSON.parse(request.responseText).results.map(({avatar_url, id, name}) => {
-            return {avatar_url, id, name, match};
+          callback(JSON.parse(request.responseText).results.map(({avatar_url, id, display_name, name}) => {
+            return {avatar_url, id, name, display_name, match};
           }));
         };
         request.send();

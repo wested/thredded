@@ -2,8 +2,8 @@
 
 require 'spec_helper'
 
-feature 'User tracking what they have and have not already read' do
-  scenario 'sees that a new topic is unread' do
+RSpec.feature 'User tracking what they have and have not already read' do
+  it 'sees that a new topic is unread' do
     topic = unread_topic
     member_signs_in
 
@@ -12,7 +12,7 @@ feature 'User tracking what they have and have not already read' do
     expect(topic).not_to be_read
   end
 
-  scenario 'sees that a previously read topic is read' do
+  it 'sees that a previously read topic is read' do
     topic = unread_topic
     member_signs_in
 
@@ -23,13 +23,13 @@ feature 'User tracking what they have and have not already read' do
     expect(topic).to be_read
   end
 
-  scenario 'sees that an updated topic is unread' do
+  it 'sees that an updated topic is unread' do
     topic = unread_topic
     member_signs_in
 
     topic.view_read_topic
 
-    travel_to 1.minute.from_now do
+    travel_to 1.day.from_now do
       topic.someone_updates_topic
     end
     topic.visit_index

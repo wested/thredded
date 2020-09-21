@@ -43,8 +43,11 @@ pl:
     errors:
       login_required: Proszę się najpierw zalogować.
       not_authorized: Nie masz uprawnień aby zobaczyć tę stronę.
+      post_not_found: Ten wpis nie istnieje.
+      private_post_not_found: Ta prywatna wiadomość nie istnieje.
       private_topic_create_denied: Nie masz uprawnień do tworzenia prywatnych tematów.
       private_topic_not_found: Ten prywatny temat nie istnieje.
+      topic_not_found: Ten temat nie istnieje.
     form:
       create_btn_submitting: Tworzenie...
       preview: Zapowiedź
@@ -52,8 +55,13 @@ pl:
       update_btn_submitting: Aktualizowanie...
     messageboard:
       create: Stwórz nową tablicę
+      deleted_notice: Tablica ogłoszeń została usunięta
       form:
         create_btn_submitting: :thredded.form.create_btn_submitting
+        delete: Usuń tablicę wiadomości
+        delete_confirm: >-
+          Spowoduje to usunięcie tablicy %{messageboard_name} i wszystkich jej postów. Nie będziesz w stanie go
+          odzyskać. Czy na pewno chcesz to zrobić?
         description_label: Opis
         locked_label: Zablokowany
         locked_notice: Ta wiadomość jest zablokowana. Tylko moderatorzy mogą tworzyć nowe tematy tutaj.
@@ -65,6 +73,7 @@ pl:
         page_title: Tablice
       last_updated_by_html: Zaktualizowano %{time_ago} <cite>przez %{user}</cite>
       topics_and_posts_counts: "%{topics_count} tematów / %{posts_count} postów"
+      topics_and_unread_topics_counts: "%{unread_topics_count} nieprzeczytane tematy %{topics_count}"
       update: :thredded.form.update
       updated_notice: Tablica została zaktualizowana
     messageboard_first_topic:
@@ -80,6 +89,8 @@ pl:
       form:
         create_btn_submitting: :thredded.form.create_btn_submitting
       saved: Grupa %{name} została utworzona
+      show:
+        page_title: 'Grupa forów: %{name}'
     moderation:
       approve_btn: Zaakceptuj
       block_btn: Zablokuj
@@ -116,6 +127,7 @@ pl:
       moderation_users: Użytkownicy
       private_topics: Prywatne wiadomości
       settings: Ustawienia powiadomień
+      unread_topics: Nieprzeczytane
     null_user_name: Usunięci użytkownicy
     posts:
       delete: Usuń post
@@ -131,6 +143,8 @@ pl:
         update_btn_submitting: :thredded.form.update_btn_submitting
       pending_moderation_notice: Twój post zostanie zamieszczony po zweryfikowaniu go przez moderatora.
       quote_btn: Zacytować
+      spoiler_summary: Spoiler - kliknij, aby pokazać.
+      spoiler_summary_for_email: 'Spoiler - wybierz zawartość poniżej, aby zobaczyć:'
     preferences:
       edit:
         page_title: :thredded.nav.settings
@@ -218,6 +232,7 @@ pl:
         title_placeholder: :thredded.topics.form.title_label
         title_placeholder_start: Rozpocznij nowy temat
         update_btn: Zaktualizuj temat
+      in_messageboard_html: w %{messageboard_link}
       locked:
         label: Zablokowany
         message: Ten temat został zablokowany przez moderatora.
@@ -236,6 +251,12 @@ pl:
       unfollow: Przestań obserwować
       unfollowed_notice: Przestałeś obserwować ten temat
       updated_notice: Temat zaktualizowany
+    unread_topics:
+      empty:
+        content: Przeczytałeś wszystko, co istnieje. Przyjdź później po więcej!
+        title: Wszystko przeczytane!
+      page_title: Nieprzeczytane tematy
+      page_title_in_messageboard: "%{messageboard}: Nieprzeczytane tematy"
     users:
       currently_online: Aktualnie online
       last_active_html: Ostatnio aktywny %{time_ago}
@@ -243,14 +264,15 @@ pl:
       posts_count:
         few: Napisał %{count} postów
         many: Napisał %{count} postów
-        one: Napisał 1 post
+        one: Napisał %{count} post
         other: Napisał %{count} postów
       recent_activity: :thredded.recent_activity
+      send_private_message: Wyślij Wiadomość Prywatną
       started_topic_html: Rozpoczął %{topic_link}
       started_topics_count:
         few: Rozpoczął %{count} tematy
         many: Rozpoczął %{count} tematów
-        one: Rozpoczął 1 temat
+        one: Rozpoczął %{count} temat
         other: Rozpoczął %{count} tematów
       user_posted_in_topic_html: "%{user_link} napisał w %{topic_link}"
       user_since_html: Zarejestrowany od %{time_ago}

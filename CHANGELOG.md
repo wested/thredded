@@ -1,3 +1,409 @@
+# v0.16.16
+
+## Fixed
+
+* Fixed a post caching bug where post contents could be replaced by contents of another post on the same page.
+  [#839](https://github.com/thredded/thredded/issues/839) [#854](https://github.com/thredded/thredded/pull/854)
+
+# v0.16.15
+
+## Fixed
+
+* Fixed race condition in `User(Private)TopicReadState` update.
+  [#845](https://github.com/thredded/thredded/issues/845) [#846](https://github.com/thredded/thredded/pull/846)
+* Fixed compatibility with NewRelic in Rails 4.
+  [#842](https://github.com/thredded/thredded/issues/842) [#848](https://github.com/thredded/thredded/pull/848)
+* Fixed deprecation warnings from `inline_svg`.
+  [cae5ae88](https://github.com/thredded/thredded/commit/cae5ae88fe85a616b538ee6b42dcfdaa40073040)
+* Fixed deprecation warnings from `onebox`.
+  [c4ae525b](https://github.com/thredded/thredded/commit/c4ae525b89790ea0b1b3e46c6d478416393248b6)
+
+# v0.16.14
+
+## Added
+
+* Experimental Webpack support.
+  [#838](https://github.com/thredded/thredded/pull/838)
+* Sprockets 4.0.0 support.
+* Messageboard group page. Can be disabled by setting `Thredded.show_messageboard_group_page = false`.
+  [#829](https://github.com/thredded/thredded/pull/829)
+
+# v0.16.13
+
+## Added
+
+* Rails 6.0.0 support (6.0.0.rc2 no longer supported).
+* Destroy Messageboard button in the UI for admins. Disabled by default.
+  [#826](https://github.com/thredded/thredded/pull/826)
+
+## Fixed
+
+* Fixed `post_moderation_records` user reference type when using UUID.
+  [#819](https://github.com/thredded/thredded/pull/819)
+
+# v0.16.12
+
+## Added
+
+* Rails 6.0.0.rc2 support.
+  [#824](https://github.com/thredded/thredded/pull/824)
+* Improved moderation history performance.
+  [a48a4726](https://github.com/thredded/thredded/commit/a48a47267cdc4ad099a372fdb7feea96d8195258)
+  [f1874fba](https://github.com/thredded/thredded/commit/f1874fba333444255979c0789ba17f8dc24a4d6f)
+
+# v0.16.11
+
+## Fixed
+
+* Table column alignment now works.
+  [#804](https://github.com/thredded/thredded/issues/804)
+* Improved `AutofollowUsers` performance.
+  [#807](https://github.com/thredded/thredded/issues/807) [#808](https://github.com/thredded/thredded/pull/808)
+
+# v0.16.10
+
+## Added
+
+* Rails 6 beta support.
+  [#802](https://github.com/thredded/thredded/pull/802) [#800](https://github.com/thredded/thredded/pull/800)
+* Thredded now adds the CSP nonce to inline script tags if CSP is enabled on Rails v5.2+.
+  [#797](https://github.com/thredded/thredded/pull/797)
+
+# v0.16.9
+
+## Fixed
+
+* Moderation > Pending now works again in Rails 4.
+  [#794](https://github.com/thredded/thredded/issues/794)
+
+* `@`-mentions are now parsed and highlighted using `Thredded.user_name_column` instead of `user.thredded_display_name`.
+  [#790](https://github.com/thredded/thredded/issues/790)
+
+# v0.16.8
+
+## Fixed
+
+* Unread followed topics navigation icon now correctly displays on mobile.
+  [#791](https://github.com/thredded/thredded/issues/791)
+  [8dc4e1a2](https://github.com/thredded/thredded/commit/8dc4e1a2dbb5697d91351d1bd586767e010104c0)
+
+# v0.16.7
+
+## Fixed
+
+* Fix post order for moderation pending & activity (a regression introduced in v0.16.6).
+  [cec880d8](https://github.com/thredded/thredded/commit/cec880d898ed0e35dda2e94de2e0e1bd09a1ce6d)
+
+# v0.16.6
+
+## Fixed
+
+* N+1 queries moderation pending & activity.
+
+  This also fixes ActiveRecord pool exhaustion caused by trying to obtain multiple database connections
+  from the render threads.
+  [#788](https://github.com/thredded/thredded/issues/788)
+
+# v0.16.5
+
+## Fixed
+
+* Kramdown v2.0 support.
+  [#786](https://github.com/thredded/thredded/issues/786)
+
+# v0.16.4
+
+## Changed
+
+* Previously, Thredded issued a separate database query for @-mentions within each post when rendering a topic
+  (at most 1 query per topic). Since posts are rendered in multiple threads by default, this wasn't as slow as
+  you might expect. However, it still required a larger connection pool and could still be slow for topics with
+  lots of @-mentions. Now, Thredded caches the @-mentioned users and the database query is under a mutex.
+  This means Thredded no longer needs a large database connection pool ([#770](https://github.com/thredded/thredded/issues/770))
+  and queries for repeated @-mentions across posts are avoided.
+
+  [#771](https://github.com/thredded/thredded/issues/771)
+
+# v0.16.3
+
+Fixes private topic form preview (regression in v0.16.2).
+
+# v0.16.2
+
+## Added
+
+* `mark_as_read` and `mark_as_unread` endpoints can now also respond to JSON.
+  This is intended for plugins and user extensions.
+  [#763](https://github.com/thredded/thredded/pull/763)
+
+* A view hook for customizing topic title on `topics#show`.
+  [#775](https://github.com/thredded/thredded/pull/775)
+
+## Changed
+
+* `mark_as_read` and `mark_as_unread` are now the `/action/` route path scope (and so will all the future actions).
+  [#763](https://github.com/thredded/thredded/pull/763)
+
+  Due to the new `/action` scope, if you have a Messageboard called "Action" you may need to change its slug:
+
+  ```ruby
+  Thredded::Messageboard.where(slug: 'action').each{|m| m.update(slug: 'action-messageboard')}
+  ```
+
+* Thredded now depends on [`sassc-rails`] instead of [`sass-rails`].
+  [`sassc-rails`] uses [`sassc`], which is a wrapper for [`libsass`], a C++ implementation of Sass.
+  This change was made because the Ruby implementation of Sass is now deprecated.
+  [#736](https://github.com/thredded/thredded/pull/736)
+
+* Improved pt-BR translation. Thanks @wenderjean! [#766](https://github.com/thredded/thredded/pull/766)
+
+[`sassc-rails`]: https://github.com/sass/sassc-rails
+[`sass-rails`]: https://github.com/rails/sass-rails
+[`sassc`]: https://github.com/sass/sassc
+[`libsass`]: https://github.com/sass/libsass
+
+## Fixed
+
+* Preview controller 500 error if the user was not signed in.
+  [#780](https://github.com/thredded/thredded/pull/780) [#779](https://github.com/thredded/thredded/issues/779)
+
+* Broken post content caching with Rails 5.2 framework defaults.
+  [#769](https://github.com/thredded/thredded/pull/769) [#712](https://github.com/thredded/thredded/issues/712)
+
+See the full list of changes here: https://github.com/thredded/thredded/compare/v0.16.1...v0.16.2.
+
+# v0.16.1
+
+## Added
+
+* The unread icon now has the notifications bell.
+  [#750](https://github.com/thredded/thredded/issues/750)
+* You can now specify which page the user is redirected to after posting a topic.
+  [#619](https://github.com/thredded/thredded/issues/619)
+* Sass variables to customize messageboard title font size and topic header font size.
+  [#740](https://github.com/thredded/thredded/pull/740)
+* Topics and posts count now account for topic/post visibility. Please report performance issues.
+  [#758](https://github.com/thredded/thredded/pull/758)
+
+## Fixed
+
+* Various issues with the recipients dropdown in Private Messages.
+  [#722](https://github.com/thredded/thredded/issues/722)
+  [#745](https://github.com/thredded/thredded/issues/745)
+* User autocompletion now sorts correctly (case-insensitive lexicographic).
+  [#744](https://github.com/thredded/thredded/issues/744)
+* Fixed last post by displaying as "deleted user" when user primary key is a UUID.
+  [#692](https://github.com/thredded/thredded/issues/692)
+* The JavaScript code that eagerly marks topics as read for better Turbolinks back button experience now respects
+  `Thredded.posts_per_page`. The unread+followed counter now also gets updated.
+  [#755](https://github.com/thredded/thredded/issues/755)
+  [#759](https://github.com/thredded/thredded/pull/759)
+* No longer breaks if `main_app` ovverides `Kaminari.config.page_method_name`.
+  [#741](https://github.com/thredded/thredded/issues/741)
+* Messageboard grid now correctly sizes cells in incomplete rows up to 6 cells.
+  [#754](https://github.com/thredded/thredded/pull/754)
+
+See the full list of changes here: https://github.com/thredded/thredded/compare/v0.16.0...v0.16.1.
+
+# v0.16.0
+
+## Added
+
+* Unread and unread followed topics are now indicated on the messageboards page like this:
+
+  ![thredded-messageboards-unread](https://user-images.githubusercontent.com/216339/46279971-898d3600-c562-11e8-8366-7112569b849a.png)
+
+  [#735](https://github.com/thredded/thredded/pull/735)
+
+## Changed
+
+* Thredded no longer provides emoji functionality such as `:smile:` by default, and also
+  no longer depends on the `gemoji` gem. It is easy to add `gemoji` back in if you want to:
+
+  1. Follow the installation instructions at https://github.com/github/gemoji.
+  2. Add the following line to `config/initializers/thredded.rb`:
+
+     ```ruby
+     Thredded::ContentFormatter.after_markup_filters.insert(1, HTML::Pipeline::EmojiFilter)
+     ```
+
+  [#739](https://github.com/thredded/thredded/pull/739)
+
+**NB**: If updating to this version from 0.15.x, you **must** copy and run the upgrade migration after updating the gem:
+
+```console
+cp "$(bundle show thredded)"/db/upgrade_migrations/20180930063614_upgrade_thredded_v0_15_to_v0_16.rb db/migrate
+bin/rails db:migrate
+```
+
+See the full list of changes here: https://github.com/thredded/thredded/compare/v0.15.5...v0.16.0.
+
+# v0.15.5
+
+## Changed
+
+* Performance improvement: Avoid redundant permission queries.
+[#725](https://github.com/thredded/thredded/pull/725)
+
+## Fixed
+
+* Navigate to the correct page for read topics.
+  [f5237960](https://github.com/thredded/thredded/commit/f5237960911d647171c8f362fcca3f53896a1778)
+* Fix an error when approving / blocking a post that was already approved / blocked.
+  [#723](https://github.com/thredded/thredded/issues/723)
+* When creating a messageboard, show an error message if the name is too long. Also makes the valid name length range
+  configurable.
+  [#720](https://github.com/thredded/thredded/issues/720)
+
+See the full list of changes here: https://github.com/thredded/thredded/compare/v0.15.4...v0.15.5.
+
+# v0.15.4
+
+## Added
+
+* A new helper method to start a private thread between two users, `Thredded::UrlsHelper.send_private_message_path`.
+  If a thread already exists between the two users, returns the URL to that thread. Otherwise, returns a URL to the new
+  message form with the recipient and subject pre-filled.
+  [#716](https://github.com/thredded/thredded/pull/716)
+* Posts and topics can now be submitted with the <kbd>Ctrl</kbd>+<kbd>Return</kbd> shortcut.
+  [#717](https://github.com/thredded/thredded/pull/717)
+* The number of posts / topics per page is now configurable via `Thredded.posts_per_page` and `Thredded.topics_per_page`.
+  [#711](https://github.com/thredded/thredded/issues/711)
+* For each topic on the Unread page, we now show the topic's messageboard.
+  [ed862031](https://github.com/thredded/thredded/commit/ed862031fa1f8d65c50439aeb578d9b0a8cd7be2)
+* `Thredded::Errors::(Private)PostNotFound` is raised and handled instead of `ActiveRecord::NotFound`.
+  [#513](https://github.com/thredded/thredded/issues/513)
+
+## Changed
+
+* The default number of posts per page has been reduced to 25.
+  [#713](https://github.com/thredded/thredded/pull/713)
+* Updated bundled JavaScript dependencies:
+  `autosize` from v4.0.0 to v4.0.2
+  ([9c4db86d](https://github.com/thredded/thredded/commit/9c4db86dfbfc37ef2df8530bc4392dc3e910d169)),
+  `textcomplete` from v0.14.5 to v0.17.1
+  ([211ce25a](https://github.com/thredded/thredded/commit/211ce25a607893395f1b45e1fe6c5c8b2a7cdf27)).
+
+See the full list of changes here: https://github.com/thredded/thredded/compare/v0.15.3...v0.15.4.
+
+# v0.15.3
+
+## Fixed
+
+* Minor style issues and regressions introduced in v0.15.2.
+
+See the full list of changes here: https://github.com/thredded/thredded/compare/v0.15.2...v0.15.3.
+
+# v0.15.2
+
+## Added
+
+* Adds a global / messageboard-level unread page. Topics are ordered followed-first. The navigation link has a badge
+  indicating the numbers of followed unread topics. If there are no unread topics at all (including non-followed ones),
+  the link is not displayed.
+  [#709](https://github.com/thredded/thredded/pull/709)
+
+See the full list of changes here: https://github.com/thredded/thredded/compare/v0.15.1...v0.15.2.
+
+# v0.15.1
+
+## Fixed
+
+* Regression in v0.15.0: broken `Thredded.posts_page_view`.
+
+See the full list of changes here: https://github.com/thredded/thredded/compare/v0.15.0...v0.15.1.
+
+# v0.15.0
+
+## Added
+
+* Spoiler tags via `<spoiler></spoiler>` (or `[spoiler][/spoiler]` with the BBCode plugin).
+  Supported out of the box for any markup processor.
+  Spoilers are focusable and are activated on mousedown, spacebar, or enter. They can also be nested.
+  Markup is configurable via `Thredded::SpoilerTagFilter.spoiler_tags`.
+  [#701](https://github.com/thredded/thredded/pull/701)
+* Jump to the first unread post when navigating to a topic.
+  [#695](https://github.com/thredded/thredded/pull/695)
+
+## Fixed
+
+* Fixes a race condition when setting `last_seen_at` for the user.
+  [#674](https://github.com/thredded/thredded/pull/674)
+* Moves validation of topic title lengths from the database into Rails and shows the error messages on title.
+  The valid length range is configurable via the new `Thredded.topic_title_length_range` configuration option.
+  [#703](https://github.com/thredded/thredded/pull/703)
+
+## Changed
+
+* Post IP tracking removed from core because it requires explicit consent under GDPR.
+  [#705](https://github.com/thredded/thredded/pull/705)
+
+**NB**: If updating to this version from 0.14.x, you **must** copy and run the upgrade migration after updating the gem:
+
+```console
+cp "$(bundle show thredded)"/db/upgrade_migrations/20180110200009_upgrade_thredded_v0_14_to_v0_15.rb db/migrate
+rake db:migrate
+```
+
+See the full list of changes here: https://github.com/thredded/thredded/compare/v0.14.5...v0.15.0.
+
+# v0.14.5
+
+## Added
+
+* Improved performance of rendering threads with multiple onebox by rendering the posts concurrently.
+  [#696](https://github.com/thredded/thredded/pull/696)
+* Private topic parameters can now be pre-filled from URL.
+  [#b107e65c](https://github.com/thredded/thredded/commit/b107e65c404b52fd31fe91e90137417047929066)
+
+  A "Send private message" link can now be generated like this:
+
+  ```ruby
+  new_private_topic_path(private_topic: { user_names: 'glebm' })
+  ```
+
+## Fixed
+
+* Now handles pages beyond the last one by issuing a redirect to the last page.
+  [#4a43b1e3](https://github.com/thredded/thredded/commit/4a43b1e3be854480fcbba1e9a110786d49e4ddbd)
+
+# v0.14.4
+
+## Added
+
+* Usernames in the "Currently Online" list are now links leading to the users' profiles.
+
+## Fixed
+
+* Fixes an error when saving global notification preferences.
+  [#9bc0e815](https://github.com/thredded/thredded/commit/9bc0e81566a54534214ddf5a8713aafae7b017d9)
+
+# v0.14.3
+
+## Fixed
+
+* Accidental N+1 query in `AutofollowUsers` job.
+  [#690](https://github.com/thredded/thredded/pull/690)
+
+* Some French translations.
+  [#681](https://github.com/thredded/thredded/pull/681)
+
+* Onebox errors resulting in 500 response.
+  [#683](https://github.com/thredded/thredded/pull/683)
+
+See the full list of changes here: https://github.com/thredded/thredded/compare/v0.14.2...v0.14.3.
+
+# v0.14.2
+
+## Added
+
+* Rails 5.2 support.
+* User's display name (via `Thredded.user_display_name_method`) is now displayed in autocomplete results
+  if it is different from the user name (`Thredded.user_name_column`).
+  [#680](https://github.com/thredded/thredded/pull/680)
+
+See the full list of changes here: https://github.com/thredded/thredded/compare/v0.14.1...v0.14.2.
+
 # v0.14.1
 
 ## Added

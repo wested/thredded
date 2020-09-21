@@ -15,7 +15,7 @@ module Thredded
 
   describe Post, '#create' do
     it 'notifies anyone @ mentioned in the post' do
-      mail = double('Thredded::PostMailer.post_notification(...)', deliver_now: true)
+      mail = instance_double(ActionMailer::MessageDelivery, deliver_now: true)
 
       expect(Thredded::PostMailer).to receive(:post_notification).with(1, ['joel@example.com']).and_return(mail)
 
@@ -81,12 +81,13 @@ module Thredded
     end
 
     context 'when Thredded.auto_follow_when_creating_topic is false',
-            thredded_reset: %i[@@auto_follow_when_creating_topic] do
+            thredded_reset: %i[@auto_follow_when_creating_topic] do
       before { Thredded.auto_follow_when_creating_topic = false }
+
       it 'does not create a follow for the creator of the first post' do
         user = create(:user)
         expect { create(:post, user: user, postable: create(:topic)) }
-          .to_not change { user.thredded_topic_follows.reload.count }
+          .not_to change { user.thredded_topic_follows.reload.count }
       end
 
       it 'creates a follow for the creator of the non-first post' do
@@ -97,12 +98,13 @@ module Thredded
     end
 
     context 'when Thredded.auto_follow_when_posting_in_topic is false',
-            thredded_reset: %i[@@auto_follow_when_posting_in_topic] do
+            thredded_reset: %i[@auto_follow_when_posting_in_topic] do
       before { Thredded.auto_follow_when_posting_in_topic = false }
+
       it 'does not create a follow for the creator of the non-first post' do
         user = create(:user)
         expect { create(:post, user: user, postable: create(:topic, with_posts: 1)) }
-          .to_not change { user.thredded_topic_follows.reload.count }
+          .not_to change { user.thredded_topic_follows.reload.count }
       end
 
       it 'creates a follow for the creator of the first post' do
@@ -118,7 +120,7 @@ module Thredded
       create(:user_topic_follow, user_id: shaun.id, topic_id: topic.id)
 
       expect { create(:post, user: shaun, postable: topic) }
-        .to_not change { shaun.thredded_topic_follows.reload.count }.from(1)
+        .not_to change { shaun.thredded_topic_follows.reload.count }.from(1)
     end
 
     it 'creates a follow for a mentioned user' do
@@ -176,6 +178,7 @@ module Thredded
         expect(create(:post, user: create(:user, :blocked))).to be_blocked
       end
     end
+
     context 'visibility' do
       let!(:approved_post) { create(:post, moderation_state: :approved) }
       let!(:blocked_post) { create(:post, moderation_state: :blocked) }
@@ -233,44 +236,49 @@ module Thredded
   end
 
   describe Post, '#page' do
+    subject(:post_page) { post.page(per_page: 1, user: NullUser.new) }
+
     let(:topic) { create :topic }
-    subject { post.page(per_page: 1, user: NullUser.new) }
+
     let(:post) { create(:post, postable: topic, id: 100) }
+
     it 'for sole post' do
-      expect(subject).to eq(1)
+      expect(post_page).to eq(1)
     end
     it 'for two posts' do
       travel_to 1.hour.ago do
         create(:post, postable: topic, id: 99)
       end
-      expect(subject).to eq(2)
+      expect(post_page).to eq(2)
     end
     it 'respects policy' do
-      policy = double(PostPolicy::Scope)
+      policy = instance_double(PostPolicy::Scope)
       expect(PostPolicy::Scope).to receive(:new).and_return(policy)
       expect(policy).to receive(:resolve).and_return(Post.none)
       travel_to 1.hour.ago do
         create(:post, postable: topic, id: 99)
       end
-      expect(subject).to eq(1)
+      expect(post_page).to eq(1)
     end
     describe 'with different per_page' do
-      subject { post.page(per_page: 2, user: NullUser.new) }
+      subject(:post_page) { post.page(per_page: 2, user: NullUser.new) }
+
       it 'respects per' do
         travel_to 1.hour.ago do
           create(:post, postable: topic, id: 99)
         end
-        expect(subject).to eq(1)
+        expect(post_page).to eq(1)
       end
     end
-    it 'with  previous posts with disordered ids' do
+
+    it 'with previous posts with disordered ids' do
       travel_to 2.hours.ago do
         create(:post, postable: topic, id: 101)
       end
       travel_to 1.hour.ago do
         create(:post, postable: topic, id: 99)
       end
-      expect(subject).to eq(3)
+      expect(post_page).to eq(3)
     end
   end
 
@@ -300,7 +308,7 @@ module Thredded
     context 'when first post' do
       it 'removes the read state' do
         expect do
-          first_post.mark_as_unread(user, page)
+          first_post.mark_as_unread(user)
         end.to change { topic.reload.user_read_states.count }.by(-1)
       end
     end
@@ -308,32 +316,24 @@ module Thredded
     context 'when third (say) post' do
       it 'changes the read state to the previous post' do
         expect do
-          third_post.mark_as_unread(user, page)
+          third_post.mark_as_unread(user)
         end.to change { read_state.reload.read_at }.to eq second_post.created_at
-      end
-
-      it 'changes the page to the previous posts' do
-        third_post.mark_as_unread(user, a_different_page)
-        expect(read_state.reload.page).to eq(a_different_page)
       end
     end
 
     context 'when none are read (no ReadState at all)' do
       let(:read_state) { nil }
+
       it 'marking first post as unread does nothing' do
         expect do
-          first_post.mark_as_unread(user, page)
-        end.to_not change { topic.reload.user_read_states.count }
+          first_post.mark_as_unread(user)
+        end.not_to change { topic.reload.user_read_states.count }
       end
       it 'marking third post as unread creates read state for second post' do
         expect do
-          third_post.mark_as_unread(user, page)
+          third_post.mark_as_unread(user)
         end.to change { topic.reload.user_read_states.count }.by(page)
         expect(topic.user_read_states.last.read_at).to eq(second_post.created_at)
-      end
-      it 'uses given page' do
-        third_post.mark_as_unread(user, a_different_page)
-        expect(topic.user_read_states.last.page).to eq(a_different_page)
       end
     end
 
@@ -342,7 +342,7 @@ module Thredded
 
       it 'marking the third post as unread changes read state to second post' do
         expect do
-          third_post.mark_as_unread(user, page)
+          third_post.mark_as_unread(user)
         end.to change { read_state.reload.read_at }.to eq second_post.created_at
       end
     end

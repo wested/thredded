@@ -9,7 +9,7 @@ module Thredded
     extend ActiveSupport::Concern
 
     included do
-      paginates_per 50
+      paginates_per Thredded.posts_per_page
 
       delegate :email, to: :user, prefix: true, allow_nil: true
 
@@ -18,7 +18,29 @@ module Thredded
       scope :order_oldest_first, -> { order(created_at: :asc, id: :asc) }
       scope :order_newest_first, -> { order(created_at: :desc, id: :desc) }
 
+      scope :preload_first_topic_post, -> {
+        posts_table_name = quoted_table_name
+        result = all
+        owners_by_id = result.each_with_object({}) { |r, h| h[r.postable_id] = r.postable }
+        next result if owners_by_id.empty?
+        preloader = ActiveRecord::Associations::Preloader.new.preload(
+          owners_by_id.values, :first_post,
+          unscoped.where(<<~SQL.delete("\n"))
+          #{posts_table_name}.created_at = (
+          SELECT MAX(p2.created_at) from #{posts_table_name} p2 WHERE p2.postable_id = #{posts_table_name}.postable_id)
+        SQL
+        )
+        preloader[0].preloaded_records.each do |post|
+          topic = owners_by_id.delete(post.postable_id)
+          next unless topic
+          topic.association(:first_post).target = post
+        end
+        result
+      }
+
       before_validation :ensure_user_detail, on: :create
+
+      after_commit :update_unread_posts_count, on: %i[create destroy]
     end
 
     def avatar_url
@@ -31,40 +53,35 @@ module Thredded
 
     # @param view_context [Object] the context of the rendering view.
     # @return [String] formatted and sanitized html-safe post content.
-    def filtered_content(view_context, users_provider: ->(names) { readers_from_user_names(names) }, **options)
-      Thredded::ContentFormatter.new(view_context, users_provider: users_provider, **options).format_content(content)
+    def filtered_content(view_context, users_provider: ::Thredded::UsersProvider, **options)
+      Thredded::ContentFormatter.new(
+        view_context, users_provider: users_provider, users_provider_scope: readers, **options
+      ).format_content(content)
     end
 
     def first_post_in_topic?
       postable.first_post == self
     end
 
-    # @return [ActiveRecord::Relation<Thredded.user_class>] users from the list of user names that can read this post.
-    # @api private
-    def readers_from_user_names(user_names)
-      DbTextSearch::CaseInsensitive
-        .new(readers, Thredded.user_name_column)
-        .in(user_names)
-    end
-
     # Marks all the posts from the given one as unread for the given user
-    # @param user [Thredded.user_class]
-    # @param page [Integer]
-    def mark_as_unread(user, page)
+    # @param [Thredded.user_class] user
+    def mark_as_unread(user)
       if previous_post.nil?
         read_state = postable.user_read_states.find_by(user_id: user.id)
         read_state.destroy if read_state
       else
-        read_state = postable.user_read_states.create_with(
-          read_at: previous_post.created_at,
-          page: page
-        ).find_or_create_by(user_id: user.id)
-        read_state.update_columns(read_at: previous_post.created_at, page: page)
+        postable.user_read_states.touch!(user.id, previous_post, overwrite_newer: true)
       end
     end
 
     def previous_post
       @previous_post ||= postable.posts.order_newest_first.find_by('created_at < ?', created_at)
+    end
+
+    protected
+
+    def update_unread_posts_count
+      postable.user_read_states.update_post_counts!
     end
 
     private

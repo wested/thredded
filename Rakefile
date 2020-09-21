@@ -6,8 +6,27 @@ rescue LoadError
   puts 'You must `gem install bundler` and `bundle install` to run rake tasks'
 end
 
-APP_RAKEFILE = File.expand_path('../spec/dummy/Rakefile', __FILE__)
+APP_RAKEFILE = File.expand_path('spec/dummy/Rakefile', __dir__)
 load 'rails/tasks/engine.rake'
+namespace :webpacker do
+  desc 'Install test app deps with yarn'
+  task :yarn_install do
+    Dir.chdir(File.join(__dir__, 'spec/dummy')) do
+      system 'yarn install --no-progress --production'
+    end
+  end
+
+  desc 'Compile test app JavaScript packs using webpack for production with digests'
+  task compile: %i[yarn_install load_app] do
+    Dir.chdir(File.join(__dir__, 'spec/dummy')) do
+      Webpacker.with_node_env('production') do
+        Webpacker.ensure_log_goes_to_stdout do
+          exit! unless ::Webpacker.instance.commands.compile
+        end
+      end
+    end
+  end
+end
 
 # Common methods for the test_all_dbs, test_all_gemfiles, and test_all Rake tasks.
 module TestTasks
@@ -46,7 +65,7 @@ module TestTasks
   end
 
   def gemfiles
-    Dir.glob('./spec/gemfiles/*.gemfile').sort
+    Dir.glob('./spec/gemfiles/rails_*.gemfile').sort
   end
 
   def dbs
@@ -107,9 +126,6 @@ end
 
 if ENV['HEROKU']
   require 'rollbar/rake_tasks'
-  namespace :assets do
-    task precompile: 'app:thredded:install:emoji'
-  end
 else
   require 'rubocop/rake_task'
   RuboCop::RakeTask.new
@@ -145,10 +161,12 @@ namespace :db do
 
   desc 'do a mini seed to generate sample data for migration tests'
   task miniseed: :environment do
+    require 'thredded/database_seeder'
     Thredded::DatabaseSeeder.run(users: 5, topics: 5, posts: 1..5)
   end
 
   task miniseed_dump: [:miniseed] do
+    require 'thredded/db_tools'
     Thredded::DbTools.dump
     system('cd spec/dummy && rails db:environment:set RAILS_ENV=development')
   end

@@ -2,25 +2,27 @@
 
 module Thredded
   class MessageboardsController < Thredded::ApplicationController
-    before_action :thredded_require_login!, only: %i[new create edit update]
+    before_action :thredded_require_login!, only: %i[new create edit update destroy]
 
     after_action :verify_authorized, except: %i[index]
-    after_action :verify_policy_scoped, except: %i[new create edit update]
+    after_action :verify_policy_scoped, except: %i[new create edit update destroy]
 
     def index
-      @groups = Thredded::MessageboardGroupView.grouped(policy_scope(Thredded::Messageboard.all))
+      @groups = Thredded::MessageboardGroupView.grouped(
+        policy_scope(Thredded::Messageboard.all),
+        user: thredded_current_user
+      )
     end
 
     def new
-      @messageboard = Thredded::Messageboard.new
-      @messageboard_group = Thredded::MessageboardGroup.all
-      authorize_creating @messageboard
+      @new_messageboard = Thredded::Messageboard.new
+      authorize_creating @new_messageboard
     end
 
     def create
-      @messageboard = Thredded::Messageboard.new(messageboard_params)
-      authorize_creating @messageboard
-      if Thredded::CreateMessageboard.new(@messageboard, thredded_current_user).run
+      @new_messageboard = Thredded::Messageboard.new(messageboard_params)
+      authorize_creating @new_messageboard
+      if Thredded::CreateMessageboard.new(@new_messageboard, thredded_current_user).run
         redirect_to root_path
       else
         render :new
@@ -40,6 +42,13 @@ module Thredded
       else
         render :edit
       end
+    end
+
+    def destroy
+      @messageboard = Thredded::Messageboard.friendly_find!(params[:id])
+      authorize @messageboard, :destroy?
+      @messageboard.destroy!
+      redirect_to root_path, notice: t('thredded.messageboard.deleted_notice')
     end
 
     private

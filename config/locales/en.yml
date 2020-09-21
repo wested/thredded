@@ -43,8 +43,11 @@ en:
     errors:
       login_required: Please sign in first.
       not_authorized: You are not authorized to access this page.
+      post_not_found: This post does not exist.
+      private_post_not_found: This private message does not exist.
       private_topic_create_denied: You are not authorized to create private topics.
       private_topic_not_found: This private topic does not exist.
+      topic_not_found: This topic does not exist.
     form:
       create_btn_submitting: Creating...
       preview: Preview
@@ -52,8 +55,13 @@ en:
       update_btn_submitting: Updating...
     messageboard:
       create: Create a New Messageboard
+      deleted_notice: Messageboard deleted
       form:
         create_btn_submitting: :thredded.form.create_btn_submitting
+        delete: Delete Messageboard
+        delete_confirm: >-
+          This will remove the messageboard %{messageboard_name} and all of its posts. You will not be able to recover
+          it. Are you sure you want to do this?
         description_label: Description
         locked_label: Locked
         locked_notice: This messageboard is locked. Only moderators can create new topics here.
@@ -64,7 +72,8 @@ en:
       index:
         page_title: Messageboards
       last_updated_by_html: Updated %{time_ago} <cite>by %{user}</cite>
-      topics_and_posts_counts: "%{topics_count} topics / %{posts_count} posts"
+      topics_and_posts_counts: "%{posts_count} posts in %{topics_count} topics"
+      topics_and_unread_topics_counts: "%{unread_topics_count} unread of %{topics_count} topics"
       update: :thredded.form.update
       updated_notice: Messageboard has been updated
     messageboard_first_topic:
@@ -80,6 +89,8 @@ en:
       form:
         create_btn_submitting: :thredded.form.create_btn_submitting
       saved: Messageboard Group %{name} created
+      show:
+        page_title: 'Messageboard Group: %{name}'
     moderation:
       approve_btn: Approve
       block_btn: Block
@@ -116,6 +127,7 @@ en:
       moderation_users: Users
       private_topics: Private Messages
       settings: Notification Settings
+      unread_topics: Unread
     null_user_name: Deleted user
     posts:
       delete: Delete Post
@@ -131,6 +143,8 @@ en:
         update_btn_submitting: :thredded.form.update_btn_submitting
       pending_moderation_notice: Your post will be published when it has been reviewed by a moderator.
       quote_btn: Quote
+      spoiler_summary: Spoiler - click to show.
+      spoiler_summary_for_email: 'Spoiler - select the contents below to see:'
     preferences:
       edit:
         page_title: :thredded.nav.settings
@@ -218,6 +232,7 @@ en:
         title_placeholder: :thredded.topics.form.title_label
         title_placeholder_start: Start a New Topic
         update_btn: Update Topic
+      in_messageboard_html: in %{messageboard_link}
       locked:
         label: Locked
         message: This topic has been locked by a moderator.
@@ -236,17 +251,24 @@ en:
       unfollow: Stop following
       unfollowed_notice: You are no longer following this topic
       updated_notice: Topic updated
+    unread_topics:
+      empty:
+        content: You've read all there is. Come back later for more!
+        title: All read!
+      page_title: Unread topics
+      page_title_in_messageboard: "%{messageboard}: Unread topics"
     users:
       currently_online: Currently Online
       last_active_html: Last active %{time_ago}
       posted_in_topic_html: Posted in %{topic_link}
       posts_count:
-        one: Posted once
+        one: Posted %{count} time
         other: Posted %{count} times
       recent_activity: :thredded.recent_activity
+      send_private_message: Send private message
       started_topic_html: Started %{topic_link}
       started_topics_count:
-        one: Started one topic
+        one: Started %{count} topic
         other: Started %{count} topics
       user_posted_in_topic_html: "%{user_link} posted in %{topic_link}"
       user_since_html: User since %{time_ago}

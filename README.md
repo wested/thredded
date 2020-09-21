@@ -4,7 +4,7 @@ _Thredded_ is a Rails 4.2+ forum/messageboard engine. Its goal is to be as simpl
 
 Some of the features currently in Thredded:
 
-* Markdown (default) or BBCode post formatting.
+* Markdown (default) and / or BBCode post formatting, with [onebox] and `<spoiler>` / `[spoiler]` tag support.
 * (Un)read posts tracking.
 * Email notifications, topic subscriptions, @-mentions, per-messageboard notification settings.
 * Private group messaging.
@@ -14,10 +14,6 @@ Some of the features currently in Thredded:
 * Flexible permissions system.
 * Basic moderation.
 * Lightweight default theme configurable via Sass.
-
-<a href='https://pledgie.com/campaigns/27480'><img alt='Click here to lend your support to: Thredded and make a donation at pledgie.com !' src='https://pledgie.com/campaigns/27480.png?skin_name=chrome' border='0' ></a>
-
-<img src="http://emoji.fileformat.info/gemoji/point_up.png" width="24"> If you are so inclined, donating to the project will help aid in its development
 
 | ![Messageboards (Thredded v0.8.2)](https://cloud.githubusercontent.com/assets/216339/20338810/1fbc4240-abd1-11e6-9cba-4ae2e654c4d4.png) |  ![Topics (Thredded v0.8.2)](https://cloud.githubusercontent.com/assets/216339/20338809/1fbb7dc4-abd1-11e6-9bc3-207b94018931.png) |
 |:---:|:---:|
@@ -32,6 +28,7 @@ If you're looking for variations on a theme - see [Discourse]. However, It is a 
 application and not an engine like Thredded.
 
 [Discourse]: http://www.discourse.org/
+[onebox]: https://github.com/discourse/onebox
 
 Table of Contents
 =================
@@ -46,7 +43,8 @@ Table of Contents
   * [Application layout](#application-layout)
     * [Reference your paths so that Thredded can find them](#reference-your-paths-so-that-thredded-can-find-them)
     * [Add Thredded styles](#add-thredded-styles)
-    * [Add Thredded JavaScripts](#add-thredded-javascripts)
+    * [Add Thredded JavaScripts (Sprockets)](#add-thredded-javascripts-sprockets)
+    * [Add Thredded JavaScripts (Webpack)](#add-thredded-javascripts-webpack)
   * [User profile page](#user-profile-page)
   * [Customizing views](#customizing-views)
     * [View hooks](#view-hooks)
@@ -98,19 +96,13 @@ Then, see the rest of this Readme for more information about using and customizi
 Add the gem to your Gemfile:
 
 ```ruby
-gem 'thredded', '~> 0.14.1'
+gem 'thredded', '~> 0.16.16'
 ```
 
 Add the Thredded [initializer] to your parent app by running the install generator.
 
 ```console
 rails generate thredded:install
-```
-
-Copy emoji images to your `public/emoji` directory.
-
-```console
-rake thredded:install:emoji
 ```
 
 Thredded needs to know the base application User model name and certain columns on it. Configure
@@ -182,7 +174,7 @@ mkdir -p app/views/thredded/shared/nav && cp "$(bundle show thredded)/$_/_standa
 
 ### Application layout
 
-You can also use Thredded with your application (or other) layout by by setting `Thredded.layout` in the initializer.
+You can also use Thredded with your application (or other) layout by setting `Thredded.layout` in the initializer.
 
 In this case, you will need to reference your paths/routes carefully and pull in thredded assets (styles and javascript):
 
@@ -219,7 +211,7 @@ from the Thredded one by adding this Sass snippet after `@import "thredded";`:
 
 See [below](#styles) for customizing the styles via Sass variables.
 
-#### Add Thredded JavaScripts
+#### Add Thredded JavaScripts (Sprockets)
 
 Include thredded JavaScripts in your `application.js`:
 
@@ -228,6 +220,28 @@ Include thredded JavaScripts in your `application.js`:
 ```
 
 Thredded is fully compatible with deferred and async script loading.
+
+#### Add Thredded JavaScripts (Webpack)
+
+You can also include Thredded JavaScript into your webpack pack.
+
+First, run `bundle exec rails webpacker:install:erb`.
+
+Then, add an `app/javascript/thredded_imports.js.erb` file with the following contents:
+
+```erb
+<%= Thredded::WebpackAssets.javascripts %>
+```
+
+Finally, add the following to your `app/javascript/packs/application.js`:
+
+```js
+require('thredded_imports.js');
+```
+
+Note that you must use `require` (not `import`) because Thredded JavaScript must be run after UJS/Turbolink `start()`
+has been called. This is because Webpack places `import` calls before the code in the same file (unlike `require`,
+which are placed in the same order as in the source).
 
 ##### Alternative JavaScript dependencies
 
@@ -368,6 +382,8 @@ If you use [Rails Email Preview], you can include Thredded emails into the list 
 You can also turn off the email notifier totally, or add other notifiers (e.g. Pushover, possibly Slack) by adjusting
 the `Thredded.notifiers` configuration in your initializer. See the default initializer for examples.
 
+You must configure the address the email appears to be from (`Thredded.email_from`). This address is also used as the "To" address for both email notifcations, as all the recipients are on bcc.
+ 
 ### Enabling auto-follow
 
 In some cases, you'll want all users to auto-follow new messageboard topics by default. This might be useful
@@ -375,7 +391,7 @@ for a team messageboard or a company announcements board, for example. To enable
 run the following migration(s):
 
 ```ruby
-change_column_default :thredded_user_preferences, :auto_follow_topics, 1
+change_column_default :thredded_user_preferences, :auto_follow_topics, true
 ```
 
 ## I18n
@@ -388,15 +404,27 @@ Here are the steps to ensure the best support for your language if it isn't Engl
 
 1. Add `rails-i18n` and `kaminari-i18n` to your Gemfile.
 
-2. Require the translations for timeago.js in your JavaScript. E.g. for Brazilian Portuguese:
+2. Require the translations for timeago.js in your JavaScript. E.g. if you want to add German and Brazilian Portuguese:
+
+   Sprockets:
 
    ```js
    //= require thredded/dependencies/timeago
+   //= require timeago/locales/de
    //= require timeago/locales/pt_BR
    //= require thredded
-   ```
+   ```                 
+   
+   Webpack:
+   
+   ```erb
+   <% timeago_root = File.join(Gem.loaded_specs['timeago_js'].full_gem_path, 'assets', 'javascripts') %>
+   import "<%= File.join(timeago_root, 'timeago.js') %>";
+   <%= %w[de pt_BR].map { |locale| %(import "#{File.join(timeago_root, "timeago/locales/#{locale}.js")}";) } * "\n" %>
+   <%= Thredded::WebpackAssets.javascripts %>
+   ```   
 
-   Note that it is important that timeago and its locales are required *before* `//= require thredded`.
+   Note that it is important that timeago and its locales are required *before* Thredded.
 
 3. To generate URL slugs for messageboards, categories, and topics with support for more language than English,
    you can use a gem like [babosa](https://github.com/norman/babosa).
@@ -558,6 +586,35 @@ To disable moderation, e.g. if you run internal forums that do not need moderati
 change_column_default :thredded_user_details, :moderation_state, 1 # approved
 ```
 
+### Requiring authentication to access Thredded
+
+To require users to be authenticated to access any part of Thredded, add the following to your initializer:
+
+```ruby
+# config/initializers/thredded.rb
+Rails.application.config.to_prepare do
+  Thredded::ApplicationController.module_eval do
+    # Require authentication to access the forums:
+    before_action :thredded_require_login!
+    # NB: in rails 4.2 you will need to change this to:
+    # before_action { thredded_require_login! }
+
+    # You may also want to render a login form after the
+    # "Please sign in first" message:
+    rescue_from Thredded::Errors::LoginRequired do |exception|
+      # Place the code for rendering the login form here, for example:
+      flash.now[:notice] = exception.message
+      controller = Users::SessionsController.new
+      controller.request = request
+      controller.request.env['devise.mapping'] = Devise.mappings[:user]
+      controller.response = response
+      controller.response_options = { status: :forbidden }
+      controller.process(:new)
+    end
+  end
+end
+```
+
 ## Plugins
 
 The following official plugins are available for Thredded:
@@ -579,18 +636,36 @@ First, to get started, migrate and seed the database (SQLite by default):
 ```bash
 bundle
 # Create, migrate, and seed the development database with fake forum users, topics, and posts:
-rake db:create db:migrate db:seed
+bin/rails db:create db:migrate db:seed
+```
+
+Install NPM dependencies for the dummy app:
+
+```bash
+cd spec/dummy && yarn && cd -
 ```
 
 Then, start the dummy app server:
 
 ```bash
-rake dev:server
+bin/rails s
+```
+
+By default, the dummy app server uses Webpack for JavaScript.
+To use Sprockets instead, run:
+
+```bash
+THREDDED_TESTAPP_WEBPACK=1 bin/rails s
 ```
 
 ### Testing
 
-To run the tests, just run `rspec`. The test suite will re-create the test database on every run, so there is no need to
+In order to run the tests locally, you will need to be running webpack-dev-server (or do a manual compilation):
+
+    cd spec/dummy && yarn && cd -
+    BUNDLE_GEMFILE="${PWD}/Gemfile" spec/dummy/bin/webpack-dev-server
+
+Then to run the tests, just run `rspec`. The test suite will re-create the test database on every run, so there is no need to
 run tasks that maintain the test database.
 
 By default, SQLite is used in development and test. On Travis, the tests will run using SQLite, PostgreSQL, MySQL,
@@ -608,8 +683,12 @@ On Mac, run:
 
 ```bash
 brew cask install chromium
-brew install chromedriver
+brew cask install chromedriver
 ```
+
+To get better page saves (`page.save_and_open_page`) from local capybara specs ensure you are running the server locally 
+and set `export CAPYBARA_ASSET_HOST=http://localhost:3000` (or whatever host/port your server is on) before running your 
+test suite.  
 
 ### Ruby
 
@@ -629,7 +708,7 @@ before updating this to full Babel.
 All Thredded JavaScript is compatible with the following Turbolinks options:
 
 * No Turbolinks.
-* Tubrolinks 5.
+* Turbolinks 5.
 * Turbolinks Classic.
 * Turbolinks Classic + jquery-turbolinks.
 
@@ -703,7 +782,7 @@ start the included docker-compose.yml file with:
 
 ```console
 docker-compose build
-docker-compose up -d
+docker-compose up
 ```
 
 The above will build and run everything, daemonized, resulting in a running

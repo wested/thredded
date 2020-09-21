@@ -7,9 +7,9 @@ module Thredded
              :last_post, :messageboard_id, :messageboard_name,
              to: :@topic
 
-    # @param topic [TopicCommon]
-    # @param read_state [UserTopicReadStateCommon, nil]
-    # @param policy [#destroy?]
+    # @param [Topic] topic
+    # @param [UserTopicReadState, NullUserTopicReadState, nil] read_state
+    # @param [#destroy?] policy
     def initialize(topic, read_state, follow, policy)
       super(topic, read_state, policy)
       @follow = follow
@@ -34,7 +34,7 @@ module Thredded
 
     # @return [Boolean] whether the topic is followed by the current user.
     def followed?
-      @follow
+      !!@follow # rubocop:disable Style/DoubleNegation
     end
 
     def follow_reason

@@ -8,8 +8,12 @@ module Thredded
       @sam = create(:user, name: 'sam')
       @joel = create(:user, name: 'joel', email: 'joel@example.com')
       @john = create(:user, name: 'john', email: 'john@example.com')
-      @post = build(:post, user: @sam, content: 'hey @joel and @john. - @sam')
-      @messageboard = @post.messageboard
+      @messageboard = create(:messageboard)
+      @topic = build(:topic, messageboard: @messageboard, user: @sam, last_user: @sam)
+      @post = build(
+        :post, postable: @topic, messageboard: @messageboard, user: @sam, content: 'hey @joel and @john. - @sam'
+      )
+      expect(User.count).to eq(3)
     end
 
     context '@-mention' do
@@ -55,14 +59,32 @@ module Thredded
         @sara = create(:user, name: 'sara', email: 'sara@example.com')
         create(:user_preference, user: @sara, auto_follow_topics: true)
         create(:user_messageboard_preference, user: @sara, auto_follow_topics: false, messageboard: @messageboard)
-        expect(AutofollowUsers.new(@post).new_followers).to_not include(@sara)
+        expect(AutofollowUsers.new(@post).new_followers).not_to include(@sara)
       end
 
       it 'does not include users who have both global and messageboard auto-follow disabled' do
         @sara = create(:user, name: 'sara', email: 'sara@example.com')
         create(:user_preference, user: @sara, auto_follow_topics: false)
         create(:user_messageboard_preference, user: @sara, auto_follow_topics: false, messageboard: @messageboard)
-        expect(AutofollowUsers.new(@post).new_followers).to_not include(@sara)
+        expect(AutofollowUsers.new(@post).new_followers).not_to include(@sara)
+      end
+    end
+
+    context 'with thredded_user_preferences.auto_follow_topics default true' do
+      around do |ex|
+        verbose_was = ActiveRecord::Migration.verbose
+        ActiveRecord::Migration.verbose = false
+        ActiveRecord::Migration.change_column_default :thredded_user_preferences, :auto_follow_topics, true
+        Thredded::UserPreference.reset_column_information
+        ex.run
+        ActiveRecord::Migration.change_column_default :thredded_user_preferences, :auto_follow_topics, false
+        Thredded::UserPreference.reset_column_information
+        ActiveRecord::Migration.verbose = verbose_was
+      end
+
+      it 'respects the default column value' do
+        sara = create(:user, name: 'sara', email: 'sara@example.com')
+        expect(AutofollowUsers.new(@post).new_followers).to include(sara)
       end
     end
   end
@@ -87,7 +109,8 @@ module Thredded
 
     def build_post_by(user)
       messageboard = create(:messageboard)
-      build(:post, user: user, content: 'hi @john', messageboard: messageboard)
+      topic = create(:topic)
+      build(:post, user: user, content: 'hi @john', messageboard: messageboard, postable: topic)
     end
   end
 end

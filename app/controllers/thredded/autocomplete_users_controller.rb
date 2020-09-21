@@ -8,11 +8,18 @@ module Thredded
       authorize_creating Thredded::PrivateTopicForm.new(user: thredded_current_user).private_topic
       users = params.key?(:q) ? users_by_prefix : users_by_ids
       render json: {
-        results: users.map do |user|
-          { id:         user.id,
-            name:       user.send(Thredded.user_name_column),
-            avatar_url: Thredded.avatar_url.call(user) }
-        end
+        results: users.map { |user| user_to_autocomplete_result(user) }
+      }
+    end
+
+    protected
+
+    def user_to_autocomplete_result(user)
+      {
+        id: user.id,
+        name: user.send(Thredded.user_name_column),
+        display_name: user.send(Thredded.user_display_name_method),
+        avatar_url: Thredded.avatar_url.call(user)
       }
     end
 
@@ -21,8 +28,10 @@ module Thredded
     def users_by_prefix
       query = params[:q].to_s.strip
       if query.length >= Thredded.autocomplete_min_length
-        DbTextSearch::CaseInsensitive.new(users_scope, Thredded.user_name_column).prefix(query)
+        case_insensitive = DbTextSearch::CaseInsensitive.new(users_scope, Thredded.user_name_column)
+        case_insensitive.prefix(query)
           .where.not(id: thredded_current_user.id)
+          .order(case_insensitive.column_for_order(:asc))
           .limit(MAX_RESULTS)
       else
         []

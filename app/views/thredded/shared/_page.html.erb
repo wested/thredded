@@ -2,14 +2,14 @@
   <%= render 'thredded/shared/header' %>
   <%= render 'thredded/shared/flash_messages' %>
   <%= yield :thredded_page_content %>
-  <%= render 'thredded/shared/currently_online' %>
+  <%= render 'thredded/shared/currently_online' if Thredded.currently_online_enabled %>
 <%- end %>
 
 <%# If thredded JS is loaded via an [async] script, the JS may
 run before or after DOMContentLoaded. Expose a flag to Thredded
 so it can initialize correctly. %>
-<script data-turbolinks-eval="false">
+<%= javascript_tag 'data-turbolinks-eval': 'false', **(Thredded.rails_supports_csp_nonce? ? {nonce: true} : {}) do %>
   document.addEventListener('DOMContentLoaded', function() {
     (window.Thredded = window.Thredded || {}).DOMContentLoadedFired = true;
   });
-</script>
+<% end %>

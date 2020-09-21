@@ -83,31 +83,9 @@ module Thredded
     end
   end
 
-  describe Topic, '.with_read_states' do
-    let(:user) { create(:user) }
-    let!(:topic) { create(:topic) }
-
-    context 'when unread' do
-      it 'returns nulls ' do
-        first = Topic.all.with_read_states(user).first
-        expect(first[0]).to eq(topic)
-        expect(first[1]).to be_an_instance_of(Thredded::NullUserTopicReadState)
-      end
-    end
-
-    context 'when read' do
-      let!(:read_state) { create(:user_topic_read_state, user: user, postable: topic, read_at: 1.day.ago) }
-      it 'returns read states' do
-        first = Topic.all.with_read_states(user).first
-        expect(first[0]).to eq(topic)
-        expect(first[1]).to eq(read_state)
-      end
-    end
-  end
-
   describe Topic, '.with_read_and_follow_states' do
     let(:user) { create(:user) }
-    let!(:topic) { create(:topic) }
+    let!(:topic) { create(:topic, with_posts: 2) }
 
     context 'when unread, unfollowed' do
       it 'returns nulls ' do
@@ -119,15 +97,23 @@ module Thredded
     end
 
     context 'when read' do
-      let!(:read_state) { create(:user_topic_read_state, user: user, postable: topic, read_at: 1.day.ago) }
+      let!(:read_state) do
+        create(
+          :user_topic_read_state, user: user, postable: topic,
+                                  read_at: topic.posts.order_oldest_first.first.created_at
+        )
+      end
+
       it 'returns read states' do
         first = Topic.all.with_read_and_follow_states(user).first
         expect(first[0]).to eq(topic)
         expect(first[1]).to eq(read_state)
       end
     end
+
     context 'when followed' do
       let!(:follow) { create(:user_topic_follow, user: user, topic: topic) }
+
       it 'returns read states' do
         first = Topic.all.with_read_and_follow_states(user).first
         expect(first[0]).to eq(topic)
@@ -137,6 +123,8 @@ module Thredded
   end
 
   describe Topic, '.followed_by(user)' do
+    subject(:followed_topics) { Topic.followed_by(user) }
+
     let(:user) { create(:user) }
     let(:topic) { create :topic }
     let(:follow_state) {}
@@ -145,30 +133,33 @@ module Thredded
       follow_state
     end
 
-    subject { Topic.followed_by(user) }
-
     context 'with following topic' do
       let(:follow_state) { UserTopicFollow.create!(user_id: user.id, topic_id: topic.id, reason: :manual) }
+
       it 'is included' do
-        expect(subject).to include(topic)
+        expect(followed_topics).to include(topic)
       end
     end
 
     context 'with not-following topic' do
       let(:follow_state) {}
+
       it 'is not included' do
-        expect(subject).not_to include(topic)
+        expect(followed_topics).not_to include(topic)
       end
       context 'when followed by someone else' do
         let(:follow_state) { UserTopicFollow.create!(user_id: create(:user).id, topic_id: topic.id, reason: :manual) }
+
         it 'is not included' do
-          expect(subject).not_to include(topic)
+          expect(followed_topics).not_to include(topic)
         end
       end
     end
   end
 
   describe Topic, '.unread_followed_by(user)' do
+    subject(:unread_followed_topics) { Topic.unread_followed_by(user) }
+
     let(:user) { create(:user) }
     let(:topic) { create :topic, last_post_at: a_minute_ago }
     let(:post) { create :post, postable: topic }
@@ -182,69 +173,85 @@ module Thredded
       follow_state
     end
 
-    subject { Topic.unread_followed_by(user) }
-
     def create_read_state(read_at, user_id: user.id)
-      UserTopicReadState.create!(user_id: user_id, postable_id: topic.id, read_at: read_at, page: 1)
+      read_state = UserTopicReadState.new(
+        user_id: user_id, messageboard_id: topic.messageboard_id, postable_id: topic.id, read_at: read_at
+      )
+      read_state.update!(read_state.calculate_post_counts)
     end
 
     context 'with following topic' do
       let(:follow_state) { UserTopicFollow.create!(user_id: user.id, topic_id: topic.id, reason: :manual) }
+
       context 'with no read state' do
         it 'is included' do
-          expect(subject).to include(topic)
+          expect(unread_followed_topics).to include(topic)
         end
       end
+
       context 'with read state not up to date' do
         let(:read_state) { create_read_state(1.day.ago) }
+
         it 'is included' do
-          expect(subject).to include(topic)
+          expect(unread_followed_topics).to include(topic)
         end
       end
+
       context 'with read state which is up to date' do
         let(:read_state) { create_read_state(topic.last_post_at) }
+
         it 'is not included' do
-          expect(subject).not_to include(topic)
+          expect(unread_followed_topics).not_to include(topic)
         end
       end
+
       context 'with read state for someone else' do
         let(:read_state) { create_read_state(topic.last_post_at, user_id: create(:user).id) }
+
         it 'is included' do
-          expect(subject).to include(topic)
+          expect(unread_followed_topics).to include(topic)
         end
       end
+
       context 'with mixture of other post' do
         before do
           create_list(:post, 3)
         end
+
         it 'has right count' do
-          expect(subject.count).to eq(1)
+          expect(unread_followed_topics.count).to eq(1)
         end
       end
     end
 
     context 'with not-following topic' do
       let(:follow_state) {}
+
       context 'with no read state' do
         it 'is not included' do
-          expect(subject).not_to include(topic)
+          expect(unread_followed_topics).not_to include(topic)
         end
       end
+
       context 'with read state not up to date' do
         let(:read_state) { create_read_state(1.day.ago) }
+
         it 'is not included' do
-          expect(subject).not_to include(topic)
+          expect(unread_followed_topics).not_to include(topic)
         end
       end
+
       context 'with read state which is up to date' do
         it 'is not included' do
-          expect(subject).not_to include(topic)
+          expect(unread_followed_topics).not_to include(topic)
         end
       end
+
       context 'when followed by someone else' do
         let(:follow_state) { UserTopicFollow.create!(user_id: create(:user).id, topic_id: topic.id, reason: :manual) }
+
         it 'is not included' do
-          expect(subject).not_to include(topic)
+          expect(unread_followed_topics).not_to include(topic)
         end
       end
     end
@@ -266,6 +273,7 @@ module Thredded
 
     context 'when not Thredded.content_visible_while_pending_moderation' do
       around { |ex| with_thredded_setting(:content_visible_while_pending_moderation, false, &ex) }
+
       it 'for an approved topic, the last user is the user of the last approved post; the last post user otherwise' do
         user = create(:user)
         topic = create(:topic, user: user, with_posts: 1)
@@ -287,7 +295,7 @@ module Thredded
   end
 
   describe Topic do
-    before(:each) do
+    before do
       @user = create(:user)
       @messageboard = create(:messageboard)
       @topic = create(:topic, messageboard: @messageboard)
@@ -330,6 +338,7 @@ module Thredded
       let(:topic) { create(:topic) }
       let(:first_post) { create(:post, postable: topic) }
       let(:second_post) { create(:post, postable: topic) }
+
       before do
         travel_to(1.month.ago) { first_post }
         travel_to(1.minute.ago) { second_post }
@@ -348,21 +357,21 @@ module Thredded
 
     context 'when an old post is edited' do
       let(:topic) { create(:topic) }
+
       before { travel_to(1.month.ago) { @post = create(:post, postable: topic) } }
 
       it 'does not change updated_at' do
-        expect { @post.update_attributes(content: 'hi there') }
-          .not_to change { @post.postable.reload.updated_at }
-      end
-
-      it 'does not change updated_at' do
-        expect { @post.update_attributes(content: 'hi there') }
-          .not_to change { @post.postable.reload.last_post_at }
+        expect { @post.update(content: 'hi there') }
+          .not_to change {
+            @post.postable.reload
+            { updated_at: @post.postable.updated_at, last_post_at: @post.postable.last_post_at }
+          }
       end
     end
 
     context 'when its messageboard is changed' do
       let(:topic) { create(:topic, with_posts: 1) }
+
       it 'updates last_topic on both old and new boards' do
         messageboard = topic.messageboard
         another_messageboard = create(:messageboard)

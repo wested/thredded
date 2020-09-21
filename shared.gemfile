@@ -1,8 +1,6 @@
-gem 'test_after_commit', group: :test
+# frozen_string_literal: true
 
-if ENV['TRAVIS']
-  gem 'codeclimate-test-reporter', group: :test, require: false
-end
+gem 'test_after_commit', group: :test
 
 group :debug do
   gem 'derailed'
@@ -14,4 +12,11 @@ group :debug do
     gem 'flamegraph'
     gem 'stackprof'
   end
+end
+
+if (RUBY_VERSION.split('.').map(&:to_i) <=> [2, 5, 0]) >= 0
+  gem 'roadie-rails'
+else
+  # roadie-rails 2 requires Ruby v2.5+.
+  gem 'roadie-rails', '~> 1.3.0' # rubocop:disable Bundler/DuplicatedGem
 end

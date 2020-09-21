@@ -3,16 +3,14 @@
 module Thredded
   class ModerationController < Thredded::ApplicationController
     before_action :thredded_require_login!
-    before_action :load_moderatable_messageboards
+    before_action :thredded_require_moderator!
 
     def pending
       @posts = Thredded::PostsPageView.new(
         thredded_current_user,
-        moderatable_posts
-          .pending_moderation
-          .order_oldest_first
-          .preload(:user, :postable)
-          .page(current_page)
+        preload_posts_for_moderation(moderatable_posts.pending_moderation).order_oldest_first
+          .send(Kaminari.config.page_method_name, current_page)
+          .preload_first_topic_post
       )
       maybe_set_last_moderated_record_flash
     end
@@ -20,39 +18,51 @@ module Thredded
     def history
       @post_moderation_records = accessible_post_moderation_records
         .order(created_at: :desc)
-        .page(current_page)
+        .send(Kaminari.config.page_method_name, current_page)
+        .preload(:messageboard, :post_user, :moderator, post: :postable)
+        .preload_first_topic_post
     end
 
     def activity
       @posts = Thredded::PostsPageView.new(
         thredded_current_user,
-        moderatable_posts
-          .order_newest_first
-          .preload(:user, :postable, :messageboard)
-          .page(current_page)
+        preload_posts_for_moderation(moderatable_posts).order_newest_first
+          .send(Kaminari.config.page_method_name, current_page)
+          .preload_first_topic_post
       )
       maybe_set_last_moderated_record_flash
     end
 
     def moderate_post
-      return head(:bad_request) unless Thredded::Post.moderation_states.include?(params[:moderation_state])
-      flash[:last_moderated_record_id] = Thredded::ModeratePost.run!(
-        post: moderatable_posts.find(params[:id]),
-        moderation_state: params[:moderation_state],
-        moderator: thredded_current_user,
-      ).id
+      moderation_state = params[:moderation_state].to_s
+      return head(:bad_request) unless Thredded::Post.moderation_states.include?(moderation_state)
+      post = moderatable_posts.find(params[:id].to_s)
+      if post.moderation_state != moderation_state
+        flash[:last_moderated_record_id] = Thredded::ModeratePost.run!(
+          post: post,
+          moderation_state: moderation_state,
+          moderator: thredded_current_user,
+        ).id
+      else
+        flash[:alert] = "Post was already #{moderation_state}:"
+        flash[:last_moderated_record_id] =
+          Thredded::PostModerationRecord.order_newest_first.find_by(post_id: post.id)&.id
+      end
       redirect_back fallback_location: pending_moderation_path
     end
 
     def users
       @users = Thredded.user_class
-        .left_join_thredded_user_details
-        .merge(Thredded::UserDetail.order(moderation_state_changed_at: :desc))
+        .eager_load(:thredded_user_detail)
+        .merge(
+          Thredded::UserDetail.order(
+            Arel.sql('COALESCE(thredded_user_details.moderation_state, 0) ASC,'\
+                     'thredded_user_details.moderation_state_changed_at DESC')
+          )
+        )
       @query = params[:q].to_s
-      if @query.present?
-        @users = DbTextSearch::CaseInsensitive.new(@users, Thredded.user_name_column).prefix(@query)
-      end
-      @users = @users.page(current_page)
+      @users = DbTextSearch::CaseInsensitive.new(@users, Thredded.user_name_column).prefix(@query) if @query.present?
+      @users = @users.send(Kaminari.config.page_method_name, current_page)
     end
 
     def user
@@ -62,7 +72,7 @@ module Thredded
         .where(messageboard_id: policy_scope(Messageboard.all).pluck(:id))
         .order_newest_first
         .includes(:postable)
-        .page(current_page)
+        .send(Kaminari.config.page_method_name, current_page)
       @posts = Thredded::PostsPageView.new(thredded_current_user, posts_scope)
     end
 
@@ -81,23 +91,31 @@ module Thredded
     end
 
     def moderatable_posts
-      Thredded::Post.where(messageboard_id: @moderatable_messageboards)
+      if moderatable_messageboards == Thredded::Messageboard.all
+        Thredded::Post.all
+      else
+        Thredded::Post.where(messageboard_id: moderatable_messageboards)
+      end
     end
 
     def accessible_post_moderation_records
-      Thredded::PostModerationRecord
-        .where(messageboard_id: @moderatable_messageboards)
+      if moderatable_messageboards == Thredded::Messageboard.all
+        Thredded::PostModerationRecord.all
+      else
+        Thredded::PostModerationRecord.where(messageboard_id: moderatable_messageboards)
+      end
     end
 
-    def load_moderatable_messageboards
-      @moderatable_messageboards = thredded_current_user.thredded_can_moderate_messageboards.to_a
-      if @moderatable_messageboards.empty? # rubocop:disable Style/GuardClause
-        fail Pundit::NotAuthorizedError, 'You are not authorized to perform this action.'
-      end
+    def moderatable_messageboards
+      @moderatable_messageboards ||= thredded_current_user.thredded_can_moderate_messageboards
     end
 
     def current_page
       (params[:page] || 1).to_i
+    end
+
+    def preload_posts_for_moderation(posts)
+      posts.includes(:user, :messageboard, :postable)
     end
   end
 end

@@ -9,6 +9,7 @@ module Thredded
       @joel = create(:user, email: 'joel@example.com')
       @sam = create(:user, email: 'sam@example.com')
     end
+
     let(:private_topic) { create(:private_topic, user: @john, users: [@john, @joel, @sam]) }
     let(:notifier) { EmailNotifier.new }
 
@@ -23,10 +24,6 @@ module Thredded
 
       context 'when preferences say not to notify on email' do
         it "doesn't include them" do
-          create(
-            :user_preference,
-            user: @joel,
-          )
           create(:notifications_for_private_topics, notifier_key: 'email', user: @joel, enabled: false)
           recipients = NotifyPrivateTopicUsers.new(post).targeted_users(notifier)
           expect(recipients).not_to include(@joel)
@@ -46,25 +43,27 @@ module Thredded
 
       let(:command) { NotifyPrivateTopicUsers.new(private_post) }
       let(:targeted_users) { [build_stubbed(:user)] }
+
       before { allow(command).to receive(:targeted_users).and_return(targeted_users) }
 
       it 'sends some emails' do
         expect { command.run }.to change { ActionMailer::Base.deliveries.count }.by(1)
       end
 
-      context 'with the MockNotifier', thredded_reset: ['@@notifiers'] do
+      context 'with the MockNotifier', thredded_reset: [:@notifiers] do
         let(:mock_notifier) { MockNotifier.new }
 
         before { Thredded.notifiers = [mock_notifier] }
+
         it "doesn't send any emails" do
           expect { command.run }.not_to change { ActionMailer::Base.deliveries.count }
         end
         it 'uses MockNotifier' do
-          expect { command.run }.to change { mock_notifier.users_notified_of_new_private_post }
+          expect { command.run }.to change(mock_notifier, :users_notified_of_new_private_post)
         end
       end
 
-      context 'with multiple notifiers', thredded_reset: ['@@notifiers'] do
+      context 'with multiple notifiers', thredded_reset: [:@notifiers] do
         let(:mock_notifier1) { MockNotifier.new }
         let(:mock_notifier2) { MockNotifier.new }
 
@@ -83,7 +82,7 @@ module Thredded
         it "second run doesn't notify" do
           command.run
           expect { command.run }
-            .to_not change { count_users_for_each_notifier }
+            .not_to change { count_users_for_each_notifier }
         end
       end
     end
