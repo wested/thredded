@@ -18,8 +18,9 @@ if ENV['LOG_SQL_TO_STDERR']
   Rails.logger.level = Logger::WARN
   ActiveRecord::Base.logger = Logger.new(STDERR)
   ActiveRecord::Base.logger.level = Logger::DEBUG
-elsif !ENV['TRAVIS']
-  ActiveRecord::SchemaMigration.logger = ActiveRecord::Base.logger = Logger.new(File.open("log/test.#{db}.log", 'w'))
+elsif !ENV['CI']
+  ActiveRecord::Base.logger = Logger.new(File.open("log/test.#{db}.log", 'w'))
+  ActiveRecord::SchemaMigration.logger = ActiveRecord::Base.logger unless Thredded::Compat.rails_gte_71?
 end
 
 # Re-create the test database and run the migrations
@@ -68,19 +69,21 @@ end
 Dir[Rails.root.join('..', '..', 'spec', 'support', '**', '*.rb')].each { |f| require f }
 
 RSpec.configure do |config| # rubocop:disable Metrics/BlockLength
+  config.backtrace_inclusion_patterns << %r{gems/([0-9.])+/gems/(?!rspec|capybara)} if ENV['BACKTRACE']
   config.filter_run_excluding migration_spec: !ENV['MIGRATION_SPEC'], configuration_spec: !ENV['CONFIGURATION_SPEC']
+  config.use_transactional_fixtures = !ENV['MIGRATION_SPEC']
   config.infer_spec_type_from_file_location!
   config.include FactoryBot::Syntax::Methods
   config.include ActiveSupport::Testing::TimeHelpers
 
   if ENV['MIGRATION_SPEC']
     config.before(:each, migration_spec: true) do
-      DatabaseCleaner.strategy = :transaction unless /mysql/i.match?(Thredded::DbTools.adapter)
-      DatabaseCleaner.start unless /mysql/i.match?(Thredded::DbTools.adapter)
+      DatabaseCleaner.strategy = :transaction unless ThreddedSpecSupport.using_mysql?
+      DatabaseCleaner.start unless ThreddedSpecSupport.using_mysql?
     end
 
     config.after(:each, migration_spec: true) do
-      if /mysql/i.match?(Thredded::DbTools.adapter)
+      if ThreddedSpecSupport.using_mysql?
         ActiveRecord::Tasks::DatabaseTasks.drop_current
         ActiveRecord::Tasks::DatabaseTasks.create_current
         Thredded::DbTools.restore
@@ -88,40 +91,14 @@ RSpec.configure do |config| # rubocop:disable Metrics/BlockLength
         DatabaseCleaner.clean
       end
     end
-  else
-    config.before(:suite) do
-      Thredded::DbTools.silence_active_record do
-        # TODO: drop database cleaner and use Rails system specs
-        DatabaseCleaner.clean_with(:truncation)
-      end
-      ActiveJob::Base.queue_adapter = :inline
-    end
+  end
 
-    config.before do
-      DatabaseCleaner.strategy = :transaction
-    end
+  config.before(:suite) do
+    ActiveJob::Base.queue_adapter = :inline
+  end
 
-    config.before(:each, type: :feature) do
-      # :rack_test driver's Rack app under test shares database connection
-      # with the specs, so continue to use transaction strategy for speed.
-      shared_db_connection = Capybara.current_driver == :rack_test
-
-      unless shared_db_connection
-        # Driver is probably for an external browser with an app
-        # under test that does *not* share a database connection with the
-        # specs, so use truncation strategy.
-        DatabaseCleaner.strategy = :truncation, { cache_tables: true }
-      end
-    end
-
-    config.before do
-      Time.zone = 'UTC'
-      DatabaseCleaner.start
-    end
-
-    config.append_after do
-      DatabaseCleaner.clean
-    end
+  config.before do
+    Time.zone = 'UTC'
   end
 end
 
@@ -136,13 +113,16 @@ browser_path = ENV['CHROMIUM_BIN'] || %w[
 
 # https://evilmartians.com/chronicles/system-of-a-test-setting-up-end-to-end-rails-testing
 Capybara.register_driver(:cuprite) do |app|
+  browser_options = {}
+  browser_options['no-sandbox'] = nil if ENV['CI']
+
   options = {
     window_size: [1280, 1024],
-    browser_options: {},
+    browser_options: browser_options,
     # Increase Chrome startup wait time (required for stable CI builds)
-    process_timeout: 10,
-    # Enable debugging capabilities
-    inspector: true,
+    process_timeout: ENV['CI'] ? 60 : 20,
+    # Enable debugging capabilities (except on CI)
+    inspector: !ENV['CI'],
     # Allow running Chrome in a headful mode by setting HEADLESS env
     # var to a falsey value
     headless: !ENV['HEADLESS'].in?(%w[n 0 no false])
@@ -151,6 +131,12 @@ Capybara.register_driver(:cuprite) do |app|
   Capybara::Cuprite::Driver.new(app, **options)
 end
 
+RSpec.configure do |config|
+  config.before :each, type: :feature, js: true do
+    # page.driver.browser.url_blacklist = %r{https://twemoji.maxcdn.com}
+    page.driver.browser.url_whitelist = %r{http://127.0.0.1:\d+}
+  end
+end
 Capybara.javascript_driver = ENV['CAPYBARA_JS_DRIVER']&.to_sym || :cuprite
 Capybara.configure do |config|
   # bump from the default of 2 seconds because travis can be slow

@@ -1,6 +1,8 @@
-# Thredded [![Code Climate](https://codeclimate.com/github/thredded/thredded/badges/gpa.svg)](https://codeclimate.com/github/thredded/thredded) [![Travis-CI](https://api.travis-ci.org/thredded/thredded.svg?branch=main)](https://travis-ci.org/thredded/thredded/) [![Test Coverage](https://codeclimate.com/github/thredded/thredded/badges/coverage.svg)](https://codeclimate.com/github/thredded/thredded/coverage) [![Inline docs](http://inch-ci.org/github/thredded/thredded.svg?branch=main)](http://inch-ci.org/github/thredded/thredded) [![Gitter](https://badges.gitter.im/thredded/thredded.svg)](https://gitter.im/thredded/thredded?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+# Thredded
+[![Code Climate](https://codeclimate.com/github/thredded/thredded/badges/gpa.svg)](https://codeclimate.com/github/thredded/thredded)  [![Test Coverage](https://codeclimate.com/github/thredded/thredded/badges/coverage.svg)](https://codeclimate.com/github/thredded/thredded/coverage) [![Inline docs](http://inch-ci.org/github/thredded/thredded.svg?branch=main)](http://inch-ci.org/github/thredded/thredded) [![Gitter](https://badges.gitter.im/thredded/thredded.svg)](https://gitter.im/thredded/thredded?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![CI](https://github.com/thredded/thredded/actions/workflows/build.yml/badge.svg)](https://github.com/thredded/thredded/actions/workflows/build.yml)
 
-_Thredded_ is a Rails 6.0+ forum/messageboard engine. Its goal is to be as simple and feature rich as possible.
+_Thredded_ is a Rails 7.0+ forum/messageboard engine. Its goal is to be as simple and feature rich as possible.
 
 Some of the features currently in Thredded:
 
@@ -21,10 +23,10 @@ Some of the features currently in Thredded:
 
 Thredded works with SQLite, MySQL (v5.6.4+), and PostgreSQL. Thredded has no infrastructure
 dependencies other than the database and, if configured in the parent application, the ActiveJob
-backend dependency such as Redis. Currently only MRI Ruby 2.2+ is supported. We would love to
+backend dependency such as Redis. Currently only MRI Ruby 3.1+ is supported. We would love to
 support JRuby and Rubinius as well.
 
-If you're looking for variations on a theme - see [Discourse]. However, It is a full rails
+If you're looking for variations on a theme - see [Discourse]. However, it is a full rails
 application and not an engine like Thredded.
 
 [Discourse]: http://www.discourse.org/
@@ -78,7 +80,15 @@ Table of Contents
 
 ### Creating a new Rails app with Thredded
 
-Thredded provides an app generator that will generate a Rails app with Thredded, Devise, SimpleForm, RSpec, 
+> [!CAUTION]
+> Please add thredded_create_app is currently out of date and needs contributors to fix it - it won't work with the latest thredded. See https://github.com/thredded/thredded_create_app if you can contribute.
+
+<details>
+<summary>
+View the outdated instructions
+</summary>
+
+Thredded provides an app generator that will generate a Rails app with Thredded, Devise, SimpleForm, RSpec,
 PostgreSQL, and a basic theme and navigation that is configured to work out of the box.
 
 ```sh
@@ -91,6 +101,8 @@ See `thredded_create_app --help` and the [thredded_create_app repo] to learn abo
 Then, see the rest of this Readme for more information about using and customizing Thredded.
 
 [thredded_create_app repo]: https://github.com/thredded/thredded_create_app
+
+</details>
 
 ### Adding Thredded to an existing Rails app
 
@@ -158,11 +170,13 @@ to Thredded.
 
 ## Rails compatibility
 
-| Rails  | Latest Thredded  |
-| ------------- |------------------|
-| Rails 6.0+ | Thredded 1.1+    |
-| Rails 5.2  | Thredded 1.0.1   |
-| Rails 4.2  | Thredded 0.16.16 |
+| Rails      | Latest Thredded   |
+|------------|-------------------|
+| Rails 7.0+ | Thredded 1.2+     |
+| Rails 6.1  | Thredded 1.1      |
+| Rails 6.0  | Thredded 1.1      |
+| Rails 5.2  | Thredded 1.0.1    |
+| Rails 4.2  | Thredded 0.16.16  |
 
 
 ## Views and other assets
@@ -257,8 +271,7 @@ which are placed in the same order as in the source).
 
 <details><summary><b>Rails UJS version</b></summary>
 
-By default, thredded loads `rails-ujs`. If you're using Rails before v5.1, you need to add `rails-ujs` to
-your Gemfile.
+By default, thredded loads `rails-ujs`.
 
 If you'd like it to use `jquery_ujs` instead, run this command from your app directory:
 
@@ -332,7 +345,7 @@ Whenever possible, use the styles and i18n to customize Thredded to your needs.
 Thredded provides view hooks to customize the UI before/after/replacing individual components.
 
 View hooks allow you to render anything in the thredded view context.
-For example, to render a partial after the post content textarea, add the snippet below to 
+For example, to render a partial after the post content textarea, add the snippet below to
 the `config/initializers/thredded.rb` initializer:
 
 ```ruby
@@ -393,7 +406,7 @@ You can also turn off the email notifier totally, or add other notifiers (e.g. P
 the `Thredded.notifiers` configuration in your initializer. See the default initializer for examples.
 
 You must configure the address the email appears to be from (`Thredded.email_from`). This address is also used as the "To" address for both email notifcations, as all the recipients are on bcc.
- 
+
 ### Enabling auto-follow
 
 In some cases, you'll want all users to auto-follow new messageboard topics by default. This might be useful
@@ -423,16 +436,16 @@ Here are the steps to ensure the best support for your language if it isn't Engl
    //= require timeago/locales/de
    //= require timeago/locales/pt_BR
    //= require thredded
-   ```                 
-   
+   ```
+
    Webpack:
-   
+
    ```erb
    <% timeago_root = File.join(Gem.loaded_specs['timeago_js'].full_gem_path, 'assets', 'javascripts') %>
    import "<%= File.join(timeago_root, 'timeago.js') %>";
    <%= %w[de pt_BR].map { |locale| %(import "#{File.join(timeago_root, "timeago/locales/#{locale}.js")}";) } * "\n" %>
    <%= Thredded::WebpackAssets.javascripts %>
-   ```   
+   ```
 
    Note that it is important that timeago and its locales are required *before* Thredded.
 
@@ -701,9 +714,9 @@ brew install --cask chromium
 brew install --cask chromedriver
 ```
 
-To get better page saves (`page.save_and_open_page`) from local capybara specs ensure you are running the server locally 
-and set `export CAPYBARA_ASSET_HOST=http://localhost:3000` (or whatever host/port your server is on) before running your 
-test suite.  
+To get better page saves (`page.save_and_open_page`) from local capybara specs ensure you are running the server locally
+and set `export CAPYBARA_ASSET_HOST=http://localhost:3000` (or whatever host/port your server is on) before running your
+test suite.
 
 ### Ruby
 

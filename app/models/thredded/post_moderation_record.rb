@@ -3,7 +3,9 @@
 module Thredded
   class PostModerationRecord < ActiveRecord::Base
     include Thredded::ModerationState
-    enum previous_moderation_state: moderation_states, _prefix: :previous
+
+    enum :previous_moderation_state, moderation_states, prefix: :previous
+
     validates :previous_moderation_state, presence: true
 
     scope :order_newest_first, -> { order(created_at: :desc, id: :desc) }

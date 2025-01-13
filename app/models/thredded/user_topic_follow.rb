@@ -2,7 +2,7 @@
 
 module Thredded
   class UserTopicFollow < ActiveRecord::Base
-    enum reason: %i[manual posted mentioned auto]
+    enum :reason, %i[manual posted mentioned auto]
 
     belongs_to :user, inverse_of: :thredded_topic_follows, class_name: Thredded.user_class_name
     belongs_to :topic, inverse_of: :user_follows
@@ -12,7 +12,8 @@ module Thredded
 
     # shim to behave like postable-related (though actually only ever related to topic)
     alias_attribute :postable_id, :topic_id
-    alias_attribute :postable, :topic
+    alias postable topic
+    alias postable= topic=
 
     # Creates a follow or finds the existing one.
     #
