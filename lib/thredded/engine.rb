@@ -22,7 +22,7 @@ module Thredded
     end
 
     config.after_initialize do |app|
-      if !Rails.env.production? && app.assets.preprocessors.keys.exclude?('text/scss')
+      if (Rails.env.development? || Rails.env.test?) && app.assets.preprocessors.keys.exclude?('text/scss')
         fail [
           'Thredded requires a Sass compiler to be registered in Sprockets.',
           %(Please add "sassc-rails" or "dartsass-sprockets" to your application Gemfile.),
